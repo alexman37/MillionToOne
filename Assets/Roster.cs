@@ -52,10 +52,10 @@ public class Roster
         rosterDMap.constraints = new RosterConstraintList();
         rosterDMap.constraints.addConstraint("CPD_HairColor", "Gray");
         rosterDMap.constraints.addConstraint("CPD_HairColor", "Ginger");
-        //rosterDMap.constraints.addConstraint("CPD_HairColor", "Gray");
-        //rosterDMap.constraints.addConstraint("CPD_BodyType", "Normal");
-        //rosterDMap.constraints.Add(new RosterConstraint("CPD_Hair", new HashSet<string> { "Normal" }));
-        applyConstraints(rosterDMap.constraints);
+        rosterDMap.constraints.addConstraint("CPD_BodyType", "Normal");
+        rosterDMap.constraints.addConstraint("CPD_SkinTone", "Mixed");
+        rosterDMap.constraints.addConstraint("CPD_Hair", "Normal");
+        applyConstraints(numChars, rosterDMap.constraints);
 
         // TODO REMOVE
         for (int i = 0; i <= numChars; i++)
@@ -71,9 +71,9 @@ public class Roster
         }
     }
 
-    public void applyConstraints(RosterConstraintList constraints)
+    public void applyConstraints(int oldRosterSize, RosterConstraintList constraints)
     {
-        int newRosterSize = roster.Count;
+        int newRosterSize = oldRosterSize;
         // Because of RosterConstraintList's strict adherence to one entry per CPD, we can assume each entry represents a unique CPD
         // And all possible values for that CPD are included.
         foreach(RosterConstraint constraint in constraints.allCurrentConstraints)
@@ -86,7 +86,8 @@ public class Roster
                 Debug.Log(field);
                 accumulatedProbability += field.probability;
             }
-            newRosterSize *= Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
+            newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
+            Debug.Log("New roster size " + newRosterSize);
         }
 
         constrainedResult.Invoke(newRosterSize);

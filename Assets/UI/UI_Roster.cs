@@ -24,6 +24,16 @@ public class UI_Roster : MonoBehaviour
         RosterGen.rosterCreationDone += setRoster;
     }
 
+    private void OnEnable()
+    {
+        Roster.constrainedResult += updateRosterCount;
+    }
+
+    private void OnDisable()
+    {
+        Roster.constrainedResult -= updateRosterCount;
+    }
+
     void createContainer()
     {
         container = new GameObject();
@@ -51,7 +61,7 @@ public class UI_Roster : MonoBehaviour
 
     public void updateRosterCount(int newCount)
     {
-        suspectsRemaining.text = newCount.ToString();
+        suspectsRemaining.text = newCount.ToString() + " Suspects Remaining";
     }
 
     public void generateAllCharCards()

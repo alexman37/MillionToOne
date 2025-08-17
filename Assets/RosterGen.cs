@@ -14,7 +14,7 @@ public class RosterGen : MonoBehaviour
     void Start()
     {
         roster = new Roster(100);
-        roster.DebugLogRoster();
+        //roster.DebugLogRoster();
         rosterCreationDone.Invoke(roster);
     }
 
