@@ -1,0 +1,4 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+circle;Circle;X;Circle
+square;Square;X;Square

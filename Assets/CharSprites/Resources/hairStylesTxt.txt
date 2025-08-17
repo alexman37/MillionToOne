@@ -1,0 +1,22 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+bademo;Bad Emo;X;Long
+barely;Barely;X;Short,Balding
+big-pigtails;Pigtails;X;Long,Pigtails
+big-sideburns;Sideburns;X;Balding
+bucket;Bucket;X;Long,Tall
+coolguy;Cool;X;Normal
+crescent;Crescent;X;Normal
+flicked;Flicked;X;Long,Normal
+long;Long;X;Long
+long-2;Long2;X;Long
+mad-scientist;Mad Scientist;X;Long,Spiky
+pigtails;Pigtails;X;Long,Pigtails
+pineapple;Pineapple;X;Normal
+plateau;Plateau;X;Normal
+puffy;Puffy;X;Normal
+sideburns;Sideburns;X;Balding
+slick;Slick;X;Normal
+spiky;Spiky;X;Normal,Spiky
+squilliam;Squilliam;X;Normal
+towel;Towel;X;Long

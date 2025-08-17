@@ -1,0 +1,22 @@
+###[int id], string name, float probability, Color32 color, string generalDescription
+Pale Ivory;X;244,206,170;White
+Warm Ivory;X;252,212,150;White
+Rose Beige;X;251,203,157;White
+Almond Beige;X;235,187,139;White
+Yellow Beige;X;233,184,126;White
+Sand Beige;X;250,207,152;White
+True Beige;X;237,181,134;White
+Natural Beige;X;234,184,125;White
+Warm Beige;X;223,166,113;Mixed
+Medium Beige;X;231,175,128;White
+Golden Beige;X;226,173,103;Mixed
+Caramel Beige;X;212,169,114;Mixed
+Honey Beige;X;225,164,110;Mixed
+Reddish Tan;X;196,126,75;Black
+Golden Bronze;X;197,141,92;Mixed
+Olive Brown;X;195,126,67;Mixed
+Cafe Brown;X;187,135,77;Mixed
+Golden Brown;X;158,98,62;Black
+Toasted Brown;X;175,117,69;Black
+Chocolate;X;134,74,38;Black
+Deep Brown;X;110,75,53;Black

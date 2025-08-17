@@ -1,0 +1,4 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+fat-suit;Fatsuit;X;Suit
+normal;Normal;X;Normal
