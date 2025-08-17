@@ -31,11 +31,12 @@ public class FormButtonGroup : MonoBehaviour
         foreach (string genDesc in buttonInstructions)
         {
             GameObject next = GameObject.Instantiate(formObjectComponent, transform);
+            next.SetActive(true);
             RectTransform rt = next.GetComponent<RectTransform>();
             standardHeight = rt.rect.height;
             rt.anchoredPosition += new Vector2(0, count * -standardHeight);
 
-            next.name = onField;
+            next.name = genDesc;
 
             FormButton formButton = next.GetComponent<FormButton>();
             formButton.onField = onField;
@@ -43,6 +44,7 @@ public class FormButtonGroup : MonoBehaviour
             formButton.title.text = genDesc;
 
             formButton.partOfGroup = this;
+            formButtons.Add(formButton);
 
             count++;
         }

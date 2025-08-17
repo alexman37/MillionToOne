@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2551503028938998424
 RectTransform:
   m_ObjectHideFlags: 0
@@ -96,6 +96,7 @@ MonoBehaviour:
   noButton: {fileID: 2551503029642168376}
   yesButton: {fileID: 2551503029266111752}
   title: {fileID: 2551503030228828207}
+  partOfGroup: {fileID: 0}
 --- !u!1 &2551503029266111754
 GameObject:
   m_ObjectHideFlags: 0

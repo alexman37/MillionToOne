@@ -8,6 +8,8 @@ public class UI_Roster : MonoBehaviour
 {
     public const int CHARACTERS_TO_SHOW = 20;
 
+    public static UI_Roster instance;
+
     private Roster roster;
 
     //UI components
@@ -16,13 +18,18 @@ public class UI_Roster : MonoBehaviour
     public TextMeshProUGUI suspectsRemaining;
 
     private GameObject container;
+    private GameObject[] createdCards;
     [SerializeField] private GameObject rosterFormContainer;
 
     void Start()
     {
+        if (instance == null) instance = this;
+        else Destroy(gameObject);
+
         createContainer();
         rosterWindow.gameObject.SetActive(false);
         RosterGen.rosterCreationDone += setRoster;
+        createdCards = new GameObject[CHARACTERS_TO_SHOW];
     }
 
     private void OnEnable()
@@ -30,6 +37,7 @@ public class UI_Roster : MonoBehaviour
         Roster.constrainedResult += updateRosterCount;
         FormButton.updatedConstraint += handleUpdatedConstraint;
         FormButton.reinitializeConstraints += handleDeconfirmed;
+        //Roster.constrainedResult += regenerateCharCards;
         Roster.rosterReady += rosterFormCreation;
     }
 
@@ -38,6 +46,7 @@ public class UI_Roster : MonoBehaviour
         Roster.constrainedResult -= updateRosterCount;
         FormButton.updatedConstraint -= handleUpdatedConstraint;
         FormButton.reinitializeConstraints -= handleDeconfirmed;
+        //Roster.constrainedResult -= regenerateCharCards;
         Roster.rosterReady -= rosterFormCreation;
     }
 
@@ -100,6 +109,37 @@ public class UI_Roster : MonoBehaviour
 
             //set portrait and name
             newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
+
+            createdCards[i] = newCard.gameObject;
+        }
+    }
+
+    // TODO - fancier animations for this - one day.
+    public void regenerateCharCards(int newNumber)
+    {
+        if(roster != null)
+        {
+            int numPortraits = Mathf.Min(newNumber, CHARACTERS_TO_SHOW);
+            for (int i = 0; i < numPortraits; i++)
+            {
+                createdCards[i].SetActive(true);
+                Character c = roster.roster[i];
+
+                //instantiate card in correct position
+                Debug.Log(i);
+                Image newCard = createdCards[i].GetComponent<Image>();
+
+                roster.rosterSprites[i].name = i.ToString();
+                // TODO would it be better as a sprite renderer???
+                newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.rosterSprites[i];
+
+                //set portrait and name
+                newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
+            }
+            for(int i = numPortraits; i < CHARACTERS_TO_SHOW; i++)
+            {
+                createdCards[i].SetActive(false);
+            }
         }
     }
 

@@ -109,6 +109,7 @@ public class FormButton : MonoBehaviour
     private void buttonInGroupConfirmed(string group, string buttonValue, bool wasConfirmed)
     {
         List<FormButton> buttonsToToggle = partOfGroup.formButtons;
+        Debug.Log("There are " + partOfGroup.formButtons.Count + " buttons in this group");
         List<string> buttonsAreOff = new List<string>();
 
         foreach(FormButton b in buttonsToToggle)

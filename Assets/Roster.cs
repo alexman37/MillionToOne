@@ -6,7 +6,8 @@ using System;
 //Facilitates generation, storage and access of the list of 100 suspects (characters 1-100), and the murder victim (character 0).
 public class Roster
 {
-    public int simulatedRosterSize; // total number of "characters" we're working with
+    public int simulatedTotalRosterSize; // total number of "characters" we're working with
+    private int simulatedCurrentRosterSize;
     public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
     public List<Sprite> rosterSprites; //consistent list of the portrait per each character
     public static RosterDemographicMap rosterDMap;
@@ -18,7 +19,8 @@ public class Roster
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
-        simulatedRosterSize = numChars;
+        simulatedTotalRosterSize = numChars;
+        simulatedCurrentRosterSize = numChars;
 
         createRoster();
     }
@@ -47,10 +49,10 @@ public class Roster
         rosterDMap = new RosterDemographicMap();
         rosterDMap.constraints = new RosterConstraintList();
 
-        initializeConstraint("CPD_Hair", cpd_hair.variants);
-        initializeConstraint("CPD_HairColor", cpd_hairColor.variants);
-        initializeConstraint("CPD_SkinTone", cpd_skinTone.variants);
-        initializeConstraint("CPD_BodyType", cpd_bodyType.variants);
+        initializeConstraint("CPD_Hair", cpd_hair.variants, true);
+        initializeConstraint("CPD_HairColor", cpd_hairColor.variants, true);
+        initializeConstraint("CPD_SkinTone", cpd_skinTone.variants, true);
+        initializeConstraint("CPD_BodyType", cpd_bodyType.variants, true);
 
         
         applyConstraints(rosterDMap.constraints);
@@ -71,7 +73,7 @@ public class Roster
         rosterReady.Invoke();
     }
 
-    public void initializeConstraint(string fieldName, CPD_Field[] variants)
+    public void initializeConstraint(string fieldName, CPD_Field[] variants, bool firstTime)
     {
         HashSet<string> uniques = new HashSet<string>();
         foreach(CPD_Field field in variants)
@@ -82,7 +84,7 @@ public class Roster
                 uniques.Add(s);
             }
         }
-        rosterDMap.uniqueDescriptions.Add(fieldName, uniques);
+        if(firstTime) rosterDMap.uniqueDescriptions.Add(fieldName, uniques);
     }
 
     /// <summary>
@@ -130,20 +132,19 @@ public class Roster
         // Characters to show
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            roster.Add(new Character(
-                i //the id
-            ));
+            roster[i] = new Character(i);
 
             roster[i].randomizeDemographicsWithConstraints(rosterDMap.constraints);
 
-            //Debug.Log("roster gen " + roster[i]);
             rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
         }
+
+        UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
     }
 
     public void applyConstraints(RosterConstraintList constraints)
     {
-        int newRosterSize = simulatedRosterSize;
+        int newRosterSize = simulatedTotalRosterSize;
         // Because of RosterConstraintList's strict adherence to one entry per CPD, we can assume each entry represents a unique CPD
         // And all possible values for that CPD are included.
         
@@ -158,10 +159,11 @@ public class Roster
             }
             newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
         }
-        
+        simulatedCurrentRosterSize = newRosterSize;
+
         Debug.Log("New roster size " + newRosterSize);
 
-        constrainedResult.Invoke(newRosterSize);
+        constrainedResult.Invoke(simulatedCurrentRosterSize);
     }
 
     public void reInitializeVariants(string group, List<string> buttonsAreOff)
@@ -198,10 +200,10 @@ public class Roster
     {
         switch (str)
         {
-            case "CPD_Hair": initializeConstraint(str, CPD_Hair.instance.variants); break;
-            case "CPD_BodyType": initializeConstraint(str, CPD_BodyType.instance.variants); break;
-            case "CPD_HairColor": initializeConstraint(str, CPD_HairColor.instance.variants); break;
-            case "CPD_SkinTone": initializeConstraint(str, CPD_SkinTone.instance.variants); break;
+            case "CPD_Hair": initializeConstraint(str, CPD_Hair.instance.variants, false); break;
+            case "CPD_BodyType": initializeConstraint(str, CPD_BodyType.instance.variants, false); break;
+            case "CPD_HairColor": initializeConstraint(str, CPD_HairColor.instance.variants, false); break;
+            case "CPD_SkinTone": initializeConstraint(str, CPD_SkinTone.instance.variants, false); break;
             default: break;
         }
     }
