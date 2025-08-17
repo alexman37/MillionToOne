@@ -6,7 +6,8 @@ using System;
 //Facilitates generation, storage and access of the list of 100 suspects (characters 1-100), and the murder victim (character 0).
 public class Roster
 {
-    public List<Character> roster;
+    public int simulatedRosterSize; // total number of "characters" we're working with
+    public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
     public List<Sprite> rosterSprites; //consistent list of the portrait per each character
     public RosterDemographicMap rosterDMap;
 
@@ -15,11 +16,12 @@ public class Roster
     public Roster(int numChars)
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
+        simulatedRosterSize = numChars;
 
-        createRoster(numChars);
+        createRoster();
     }
 
-    public void createRoster(int numChars)
+    public void createRoster()
     {
         if (roster != null)
         {
@@ -39,26 +41,20 @@ public class Roster
         CPD_HeadType cpd_headType = new CPD_HeadType();
         CPD_Face cpd_face = new CPD_Face();
 
-        Dictionary<string, CPD_Field[]> mappings = new Dictionary<string, CPD_Field[]>();
-        mappings.Add("CPD_Hair", cpd_hair.variants);
-        mappings.Add("CPD_HairColor", cpd_hairColor.variants);
-        mappings.Add("CPD_SkinTone", cpd_skinTone.variants);
-        mappings.Add("CPD_BodyType", cpd_bodyType.variants);
-        mappings.Add("CPD_HeadType", cpd_headType.variants);
-        mappings.Add("CPD_Face", cpd_face.variants);
-
         // Generate Demographic Mappings.
-        rosterDMap = new RosterDemographicMap(mappings);
+        rosterDMap = new RosterDemographicMap();
         rosterDMap.constraints = new RosterConstraintList();
-        rosterDMap.constraints.addConstraint("CPD_HairColor", "Gray");
-        rosterDMap.constraints.addConstraint("CPD_HairColor", "Ginger");
-        rosterDMap.constraints.addConstraint("CPD_BodyType", "Normal");
-        rosterDMap.constraints.addConstraint("CPD_SkinTone", "Mixed");
-        rosterDMap.constraints.addConstraint("CPD_Hair", "Normal");
-        applyConstraints(numChars, rosterDMap.constraints);
+
+        initializeConstraint("CPD_Hair", cpd_hair.variants);
+        initializeConstraint("CPD_HairColor", cpd_hairColor.variants);
+        initializeConstraint("CPD_SkinTone", cpd_skinTone.variants);
+        initializeConstraint("CPD_BodyType", cpd_bodyType.variants);
+
+        
+        applyConstraints(rosterDMap.constraints);
 
         // TODO REMOVE
-        for (int i = 0; i <= numChars; i++)
+        for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
             roster.Add(new Character(
                 i //the id
@@ -71,26 +67,105 @@ public class Roster
         }
     }
 
-    public void applyConstraints(int oldRosterSize, RosterConstraintList constraints)
+    public void initializeConstraint(string fieldName, CPD_Field[] variants)
     {
-        int newRosterSize = oldRosterSize;
+        foreach(CPD_Field field in variants)
+        {
+            foreach (string s in field.generalDesc)
+            {
+                rosterDMap.constraints.addConstraint(fieldName, s);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds an acceptable value to the constrained list for a particular field.
+    /// </summary>
+    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
+    /// <param name="value">Value to accept (EG Gray, White...)</param>
+    public void addConstraint(string fieldName, string value)
+    {
+        // Add to constraints list
+        rosterDMap.constraints.addConstraint(fieldName, value);
+        redrawRosterVis();
+    }
+
+    /// <summary>
+    /// Removes an acceptable value from the constrained list for a particular field.
+    /// </summary>
+    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
+    /// <param name="value">Value to no longer accept (EG Gray, White...)</param>
+    public void removeConstraint(string fieldName, string value)
+    {
+        // Add to constraints list
+        rosterDMap.constraints.removeConstraint(fieldName, value);
+        redrawRosterVis();
+    }
+
+    /// <summary>
+    /// Makes the given value the only acceptable value for a particular field's constraints
+    /// </summary>
+    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
+    /// <param name="value">Sole value to accept (EG Gray, White...)</param>
+    public void onlyConstraint(string fieldName, string value)
+    {
+        // Add to constraints list
+        rosterDMap.constraints.onlyConstraint(fieldName, value);
+        redrawRosterVis();
+    }
+
+
+    private void redrawRosterVis()
+    {
+        // TODO do this in a separate step.
+        applyConstraints(rosterDMap.constraints);
+
+        // Characters to show
+        for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
+        {
+            roster.Add(new Character(
+                i //the id
+            ));
+
+            roster[i].randomizeDemographicsWithConstraints(rosterDMap.constraints);
+
+            //Debug.Log("roster gen " + roster[i]);
+            rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
+        }
+    }
+
+    public void applyConstraints(RosterConstraintList constraints)
+    {
+        int newRosterSize = simulatedRosterSize;
         // Because of RosterConstraintList's strict adherence to one entry per CPD, we can assume each entry represents a unique CPD
         // And all possible values for that CPD are included.
-        foreach(RosterConstraint constraint in constraints.allCurrentConstraints)
+        
+        foreach (RosterConstraint constraint in constraints.allCurrentConstraints)
         {
             CPD_Field[] fields = stringToCPD(constraint.onField, constraint.possibleValues);
-            Debug.Log(fields.Length);
             float accumulatedProbability = 0;
-            foreach(CPD_Field field in fields)
+
+            foreach (CPD_Field field in fields)
             {
-                Debug.Log(field);
+                Debug.Log(field + " added probability " + field.probability);
                 accumulatedProbability += field.probability;
             }
+            Debug.Log(accumulatedProbability);
             newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
-            Debug.Log("New roster size " + newRosterSize);
         }
+        
+        Debug.Log("New roster size " + newRosterSize);
 
         constrainedResult.Invoke(newRosterSize);
+    }
+
+    public void reInitializeVariants(string group, List<string> buttonsAreOff)
+    {
+        initializeConstraintFromString(group);
+        foreach(string exclude in buttonsAreOff)
+        {
+            removeConstraint(group, exclude);
+        }
     }
 
     public void DebugLogRoster()
@@ -113,16 +188,26 @@ public class Roster
             default: return null;
         }
     }
+
+    private void initializeConstraintFromString(string str)
+    {
+        switch (str)
+        {
+            case "CPD_Hair": initializeConstraint(str, CPD_Hair.instance.variants); break;
+            case "CPD_BodyType": initializeConstraint(str, CPD_BodyType.instance.variants); break;
+            case "CPD_HairColor": initializeConstraint(str, CPD_HairColor.instance.variants); break;
+            case "CPD_SkinTone": initializeConstraint(str, CPD_SkinTone.instance.variants); break;
+            default: break;
+        }
+    }
 }
 
 public class RosterDemographicMap
 {
-    public Dictionary<string, CPD_Field[]> demographicMappings;
     public RosterConstraintList constraints;
 
-    public RosterDemographicMap(Dictionary<string, CPD_Field[]> maps)
+    public RosterDemographicMap()
     {
-        demographicMappings = maps;
     }
 }
 
@@ -135,6 +220,7 @@ public class RosterConstraintList
         this.allCurrentConstraints = new List<RosterConstraint>();
     }
 
+    // Add to constraints list
     public void addConstraint(string fieldTypeName, string constraint)
     {
         bool found = false;
@@ -152,6 +238,48 @@ public class RosterConstraintList
         }
 
         if(!found) {
+            allCurrentConstraints.Add(new RosterConstraint(fieldTypeName, new HashSet<string> { constraint }));
+        }
+    }
+
+    public void removeConstraint(string fieldTypeName, string constraint)
+    {
+        bool found = false;
+        foreach (RosterConstraint c in allCurrentConstraints)
+        {
+            if (c.onField == fieldTypeName)
+            {
+                found = true;
+                if (c.possibleValues.Contains(constraint))
+                {
+                    c.possibleValues.Remove(constraint);
+                }
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            Debug.LogWarning($"Didn't find a field {fieldTypeName} to remove constraints from.");
+        }
+    }
+
+    public void onlyConstraint(string fieldTypeName, string constraint)
+    {
+        bool found = false;
+        foreach (RosterConstraint c in allCurrentConstraints)
+        {
+            if (c.onField == fieldTypeName)
+            {
+                found = true;
+                c.possibleValues.Clear();
+                c.possibleValues.Add(constraint);
+                break;
+            }
+        }
+
+        if (!found)
+        {
             allCurrentConstraints.Add(new RosterConstraint(fieldTypeName, new HashSet<string> { constraint }));
         }
     }

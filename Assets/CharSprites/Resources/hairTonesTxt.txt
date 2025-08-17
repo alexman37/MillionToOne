@@ -10,7 +10,7 @@ Dark Brown;X;60-80,20-40,0;Brown
 Brown;X;100-120,50-70,0;Brown
 Bright Brown;X;145-165,80-100,0;Brown
 Ginger;X;220-230,70-120,0;Ginger
-Gold;X;220-230,170-195,0;Yellow,Blonde
-Shiny Blonde;X;220-230,220-240,0;Yellow,Blonde
-Dirty Blonde;X;255,205-225,90-140;Yellow,Blonde
+Gold;X;220-230,170-195,0;Blonde
+Shiny Blonde;X;220-230,220-240,0;Blonde
+Dirty Blonde;X;255,205-225,90-140;Blonde
 Green;X;0,120-220,0-100;Green

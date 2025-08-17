@@ -6,7 +6,7 @@ using TMPro;
 
 public class UI_Roster : MonoBehaviour
 {
-    const int CHARACTERS_TO_SHOW = 20;
+    public const int CHARACTERS_TO_SHOW = 20;
 
     private Roster roster;
 
@@ -27,11 +27,15 @@ public class UI_Roster : MonoBehaviour
     private void OnEnable()
     {
         Roster.constrainedResult += updateRosterCount;
+        FormButton.updatedConstraint += handleUpdatedConstraint;
+        FormButton.reinitializeConstraints += handleDeconfirmed;
     }
 
     private void OnDisable()
     {
         Roster.constrainedResult -= updateRosterCount;
+        FormButton.updatedConstraint -= handleUpdatedConstraint;
+        FormButton.reinitializeConstraints -= handleDeconfirmed;
     }
 
     void createContainer()
@@ -94,5 +98,26 @@ public class UI_Roster : MonoBehaviour
             //set portrait and name
             newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
         }
+    }
+
+    private void handleUpdatedConstraint(string onField, string value, FormButtonState newState)
+    {
+        switch (newState)
+        {
+            case FormButtonState.Unknown:
+                roster.addConstraint(onField, value);
+                break;
+            case FormButtonState.Eliminated:
+                roster.removeConstraint(onField, value);
+                break;
+            case FormButtonState.Confirmed:
+                roster.onlyConstraint(onField, value);
+                break;
+        }
+    }
+
+    private void handleDeconfirmed(string group, List<string> exclude)
+    {
+        roster.reInitializeVariants(group, exclude);
     }
 }

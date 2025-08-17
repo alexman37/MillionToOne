@@ -242,16 +242,25 @@ public class CPD<T> where T : CPD_Field, new()
     public T[] getPossibleValuesFromGenDesc(IEnumerable genDescs)
     {
         List<T[]> temp2d = new List<T[]>();
+        HashSet<int> underTheHoodDuplicates = new HashSet<int>();
         int count = 0;
         foreach (string genDesc in genDescs)
         {
+            Debug.Log("Looking for value " + genDesc);
             T[] arrs = new T[genericNamesToVariants[genDesc].Count];
-            for (int i = 0; i < genericNamesToVariants[genDesc].Count; i++)
+            List<T> cachedList = genericNamesToVariants[genDesc];
+
+            for (int i = 0; i < arrs.Length; i++)
             {
-                arrs[i] = genericNamesToVariants[genDesc][i];
+                if(!underTheHoodDuplicates.Contains(cachedList[i].id))
+                {
+                    arrs[i] = cachedList[i];
+                    count += 1;
+                    underTheHoodDuplicates.Add(cachedList[i].id);
+                }
             }
             temp2d.Add(arrs);
-            count += arrs.Length;
+            
         }
 
         T[] merged = new T[count];
@@ -260,8 +269,11 @@ public class CPD<T> where T : CPD_Field, new()
         {
             for(int i = 0; i < items.Length; i++)
             {
-                merged[count] = items[i];
-                count++;
+                if(items[i] != null)
+                {
+                    merged[count] = items[i];
+                    count++;
+                }
             }
         }
 
