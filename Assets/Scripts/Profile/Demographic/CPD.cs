@@ -246,7 +246,6 @@ public class CPD<T> where T : CPD_Field, new()
         int count = 0;
         foreach (string genDesc in genDescs)
         {
-            Debug.Log("Looking for value " + genDesc);
             T[] arrs = new T[genericNamesToVariants[genDesc].Count];
             List<T> cachedList = genericNamesToVariants[genDesc];
 

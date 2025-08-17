@@ -16,6 +16,7 @@ public class UI_Roster : MonoBehaviour
     public TextMeshProUGUI suspectsRemaining;
 
     private GameObject container;
+    [SerializeField] private GameObject rosterFormContainer;
 
     void Start()
     {
@@ -29,6 +30,7 @@ public class UI_Roster : MonoBehaviour
         Roster.constrainedResult += updateRosterCount;
         FormButton.updatedConstraint += handleUpdatedConstraint;
         FormButton.reinitializeConstraints += handleDeconfirmed;
+        Roster.rosterReady += rosterFormCreation;
     }
 
     private void OnDisable()
@@ -36,6 +38,7 @@ public class UI_Roster : MonoBehaviour
         Roster.constrainedResult -= updateRosterCount;
         FormButton.updatedConstraint -= handleUpdatedConstraint;
         FormButton.reinitializeConstraints -= handleDeconfirmed;
+        Roster.rosterReady -= rosterFormCreation;
     }
 
     void createContainer()
@@ -98,6 +101,11 @@ public class UI_Roster : MonoBehaviour
             //set portrait and name
             newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
         }
+    }
+
+    private void rosterFormCreation()
+    {
+        rosterFormContainer.GetComponent<RosterForm>().enabled = true;
     }
 
     private void handleUpdatedConstraint(string onField, string value, FormButtonState newState)

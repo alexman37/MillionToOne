@@ -9,13 +9,15 @@ public class Roster
     public int simulatedRosterSize; // total number of "characters" we're working with
     public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
     public List<Sprite> rosterSprites; //consistent list of the portrait per each character
-    public RosterDemographicMap rosterDMap;
+    public static RosterDemographicMap rosterDMap;
 
+    public static event Action rosterReady;
     public static event Action<int> constrainedResult;
 
     public Roster(int numChars)
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
+        if (rosterReady == null) rosterReady += () => { };
         simulatedRosterSize = numChars;
 
         createRoster();
@@ -65,17 +67,22 @@ public class Roster
             //Debug.Log("roster gen " + roster[i]);
             rosterSprites.Add(CharSpriteGen.genSpriteFromLayers(roster[i]));
         }
+
+        rosterReady.Invoke();
     }
 
     public void initializeConstraint(string fieldName, CPD_Field[] variants)
     {
+        HashSet<string> uniques = new HashSet<string>();
         foreach(CPD_Field field in variants)
         {
             foreach (string s in field.generalDesc)
             {
                 rosterDMap.constraints.addConstraint(fieldName, s);
+                uniques.Add(s);
             }
         }
+        rosterDMap.uniqueDescriptions.Add(fieldName, uniques);
     }
 
     /// <summary>
@@ -147,10 +154,8 @@ public class Roster
 
             foreach (CPD_Field field in fields)
             {
-                Debug.Log(field + " added probability " + field.probability);
                 accumulatedProbability += field.probability;
             }
-            Debug.Log(accumulatedProbability);
             newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
         }
         
@@ -204,10 +209,12 @@ public class Roster
 
 public class RosterDemographicMap
 {
+    public Dictionary<string, HashSet<string>> uniqueDescriptions;
     public RosterConstraintList constraints;
 
     public RosterDemographicMap()
     {
+        uniqueDescriptions = new Dictionary<string, HashSet<string>>();
     }
 }
 

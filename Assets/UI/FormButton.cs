@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.UI;
+using TMPro;
 
 public class FormButton : MonoBehaviour
 {
@@ -14,13 +15,13 @@ public class FormButton : MonoBehaviour
 
     public Button noButton;
     public Button yesButton;
+    public TextMeshProUGUI title;
 
     private bool acceptingInput = true;
     private bool noTicked = false;
     private bool yesTicked = false;
 
-    private static readonly object lockObject = new object();
-    public static Dictionary<string, List<FormButton>> buttonsByField;
+    public FormButtonGroup partOfGroup;
 
     // Update a particular field with some new constraints. FormButtonState determines if you add or remove them.
     public static event Action<string, string, FormButtonState> updatedConstraint;
@@ -30,16 +31,6 @@ public class FormButton : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        lock (lockObject)
-        {
-            if (buttonsByField == null) buttonsByField = new Dictionary<string, List<FormButton>>();
-
-            if (!buttonsByField.ContainsKey(onField))
-                buttonsByField.Add(onField, new List<FormButton> { this });
-            else
-                buttonsByField[onField].Add(this);
-        }
-
         state = FormButtonState.Unknown;
         img1 = noButton.gameObject.GetComponent<Image>();
         img2 = yesButton.gameObject.GetComponent<Image>();
@@ -117,7 +108,7 @@ public class FormButton : MonoBehaviour
     /// </summary>
     private void buttonInGroupConfirmed(string group, string buttonValue, bool wasConfirmed)
     {
-        List<FormButton> buttonsToToggle = buttonsByField[group];
+        List<FormButton> buttonsToToggle = partOfGroup.formButtons;
         List<string> buttonsAreOff = new List<string>();
 
         foreach(FormButton b in buttonsToToggle)

@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 79be1c17ad3bd7e45997db1f4efac6f9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - formButtonGroupTemplate: {fileID: 2551503029569889226, guid: d66e71bd8f966054a85634de238f608c, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
