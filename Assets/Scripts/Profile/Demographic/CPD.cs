@@ -224,7 +224,8 @@ public class CPD<T> where T : CPD_Field, new()
         {
             allPossible.AddRange(genericNamesToVariants[acceptable]);
         }
-        return allPossible[Random.Range(0, allPossible.Count)];
+        if (allPossible.Count == 0) return null;
+        else return allPossible[Random.Range(0, allPossible.Count)];
     }
 
     // For a single constraint
