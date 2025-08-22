@@ -121,7 +121,7 @@ public class Roster
 
 
 
-    private void redrawRosterVis()
+    public void redrawRosterVis()
     {
         // TODO do this in a separate step.
         applyConstraints(rosterConstraints);
@@ -185,8 +185,6 @@ public class Roster
             Debug.Log(roster[i]);
         }
     }
-
-
 
 
     /// Everything to do with the simulated ID

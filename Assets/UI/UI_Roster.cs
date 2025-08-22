@@ -77,6 +77,7 @@ public class UI_Roster : MonoBehaviour
 
     public void updateRosterCount(int newCount)
     {
+        Debug.Log("Updated roster?");
         suspectsRemaining.text = newCount.ToString() + " Suspects Remaining";
     }
 
@@ -150,6 +151,7 @@ public class UI_Roster : MonoBehaviour
 
     private void handleUpdatedConstraint(CPD_Type cpdType, string value, FormButtonState newState)
     {
+        Debug.Log("Updated constraints?");
         switch (newState)
         {
             case FormButtonState.Unknown:
@@ -162,6 +164,7 @@ public class UI_Roster : MonoBehaviour
                 roster.rosterConstraints.onlyConstraint(cpdType, value);
                 break;
         }
+        roster.redrawRosterVis();
     }
 
     private void handleDeconfirmed(CPD_Type cpdType, List<string> exclude)

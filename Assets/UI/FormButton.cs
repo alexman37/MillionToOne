@@ -40,7 +40,7 @@ public class FormButton : MonoBehaviour
 
     public void toggleYesButton()
     {
-        if(acceptingInput)
+        if (acceptingInput)
         {
             yesTicked = !yesTicked;
             if (yesTicked)
