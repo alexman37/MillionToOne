@@ -9,10 +9,20 @@ public static class CharSpriteGen
     public static Sprite genSpriteFromLayers(Character ch)
     {
         //SpriteGenLayer clean = new SpriteGenLayer(ch.background.getSprite(), oneList(Color.green), oneList(ch.skinTone.color));
-        SpriteGenLayer body = new SpriteGenLayer(ch.bodyType.getSprite(), oneList(Color.green), oneList(ch.skinTone.color));
-        SpriteGenLayer head = new SpriteGenLayer(ch.headType.getSprite(), oneList(Color.red), oneList(ch.skinTone.color));
-        SpriteGenLayer hair = new SpriteGenLayer(ch.hairStyle.getSprite(), oneList(Color.blue), oneList(ch.hairColor.color));
-        SpriteGenLayer face = new SpriteGenLayer(ch.face.getSprite());
+        SpriteGenLayer body = new SpriteGenLayer(
+            getSpriteOfCPD(CPD_Type.BodyType, ch.getCpdIDofCharacteristic(CPD_Type.BodyType)),
+            oneList(Color.green),
+            oneList(getColorOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone))));
+        SpriteGenLayer head = new SpriteGenLayer(
+            getSpriteOfCPD(CPD_Type.HeadType, ch.getCpdIDofCharacteristic(CPD_Type.HeadType)),
+            oneList(Color.red),
+            oneList(getColorOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone))));
+        SpriteGenLayer hair = new SpriteGenLayer(
+            getSpriteOfCPD(CPD_Type.HairStyle, ch.getCpdIDofCharacteristic(CPD_Type.HairStyle)),
+            oneList(Color.blue),
+            oneList(getColorOfCPD(CPD_Type.HairColor, ch.getCpdIDofCharacteristic(CPD_Type.HairColor))));
+        SpriteGenLayer face = new SpriteGenLayer(
+            getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)));
 
         SpriteGenLayer[] newLayers = { body, head, hair, face };
 
@@ -63,6 +73,16 @@ public static class CharSpriteGen
         List<Color> cols = new List<Color>();
         cols.Add(c);
         return cols;
+    }
+
+    private static Sprite getSpriteOfCPD(CPD_Type cpdT, int varIndex)
+    {
+        return (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Filepath).getSprite();
+    }
+
+    private static Color getColorOfCPD(CPD_Type cpdT, int varIndex)
+    {
+        return (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col;
     }
 }
 

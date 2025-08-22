@@ -15,7 +15,7 @@ public class CharSpriteTester : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Character cTest = new Character(0);
+        //Character cTest = new Character(0, 0);
         //cp.randomizeDemographics(false, false, false);
         //Debug.Log(cp.hairColor);
         //getNewRandomSprite(cp.skinTone, cp.hairColor);
@@ -27,9 +27,9 @@ public class CharSpriteTester : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Q))
         {
-            cTest = new Character(0);
-            cTest.randomizeDemographics(false, false, false);
-            getNewRandomSprite(CPD_SkinTone.instance.getRandom(), CPD_HairColor.instance.getRandom());
+            cTest = new Character(0, 0);
+            cTest.randomizeDemographics();
+            getNewRandomSprite();
         }
 
         //name testing
@@ -45,7 +45,7 @@ public class CharSpriteTester : MonoBehaviour
         }
     }
 
-    public void getNewRandomSprite(SkinTone st, HairColor hc)
+    public void getNewRandomSprite()
     {
         Destroy(currImg);
 

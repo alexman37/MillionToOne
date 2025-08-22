@@ -6,20 +6,10 @@ using UnityEngine;
 public class Character
 {
     //Demographics
-    int id; //Secret id that keeps track of which character this is in the scenario (0-100). 0 is the murder victim.
-    int height;
-    int weight;
-    bool isMale;
-    public BodyType bodyType;
-    public HeadType headType;
-    public SkinTone skinTone;
-    public HairStyle hairStyle;
-    public HairColor hairColor;
-    public FaceType face;
-    CPD_Moustache moustache;
-    CPD_Beard beard;
-    CPD_Glasses glasses;
-    CPD_EyeColor eyeColor;
+    int rosterId; // Where in the roster list of known characters (and sprites) this person is.
+    int simulatedId; // The unique ID from (0 - rosterSize - 1) that contains all this character's constrainable CPD values
+                     // All other (cosmetic) random values generated using this simulatedId as a seed
+    Dictionary<CPD_Type, CPD_Variant> createdCharacteristics; // Once we create a character we can assign them data in here
 
     //Attributes
     string firstName;
@@ -37,58 +27,34 @@ public class Character
     //List<Trait> traits = new List<Trait>();
 
     //Randomize everything!
-    public Character(int id)
+    public Character(int rosterId, int simulatedId)
     {
-        this.id = id;
+        this.rosterId = rosterId;
+        this.simulatedId = simulatedId;
+
+        randomizeDemographics();
     }
 
     // Randomize demographics, for all fields NOT set yet (for ex., by constraints.)
-    public void randomizeDemographics(bool heightSet, bool weightSet, bool isMaleSet)
+    public void randomizeDemographics()
     {
-        // TODO - are we gonna replace these? Or make them more like the others?
-        if (!heightSet) height = CharRandomValue.range(0, 6);
-        if (!weightSet) weight = CharRandomValue.range(0, 6);
-        if (!isMaleSet) isMale = CharRandomValue.coin();
-
-        if (headType == null) headType = CPD_HeadType.instance.getRandom();
-        if (bodyType == null) bodyType = CPD_BodyType.instance.getRandom();
-        if (face == null) face = CPD_Face.instance.getRandom();
-        if (skinTone == null) skinTone = CPD_SkinTone.instance.getRandom();
-        if (hairColor == null) hairColor = CPD_HairColor.instance.getRandom();
-        if (hairStyle == null) hairStyle = CPD_Hair.instance.getRandom();
+        // CRIT POINT
+        List<CPD_Variant> temp = Roster.SimulatedID.unpackSimulatedID(simulatedId);
+        createdCharacteristics = new Dictionary<CPD_Type, CPD_Variant>();
+        foreach (CPD_Variant var in temp)
+        {
+            createdCharacteristics.Add(var.cpdType, var);
+        }
 
         //name
-        (string f, string l) fullName = CharRandomValue.randomName(isMale);
+        (string f, string l) fullName = CharRandomValue.randomName(true); // TODO isMale
         firstName = fullName.f;
         lastName = fullName.l;
     }
 
-    public void randomizeDemographicsWithConstraints(RosterConstraintList constraints)
+    public int getCpdIDofCharacteristic(CPD_Type characteristic)
     {
-        if(constraints != null)
-        {
-            foreach (RosterConstraint constraint in constraints.allCurrentConstraints)
-            {
-                switch (constraint.onField)
-                {
-                    case "CPD_BodyType":
-                        bodyType = CPD_BodyType.instance.getRandomConstrained(constraint.possibleValues);
-                        break;
-                    case "CPD_Hair":
-                        hairStyle = CPD_Hair.instance.getRandomConstrained(constraint.possibleValues);
-                        break;
-                    case "CPD_SkinTone":
-                        skinTone = CPD_SkinTone.instance.getRandomConstrained(constraint.possibleValues);
-                        break;
-                    case "CPD_HairColor":
-                        hairColor = CPD_HairColor.instance.getRandomConstrained(constraint.possibleValues);
-                        break;
-                    default: break;
-                }
-            }
-        }
-        
-        randomizeDemographics(false, false, false); // TODO constrain on gender
+        return createdCharacteristics[characteristic].cpdID;
     }
 
     public string getDisplayName(bool newline)
@@ -99,14 +65,15 @@ public class Character
 
     public override string ToString()
     {
-        string str = "[" + id + "] " + firstName + " " + lastName + "\n" +
-            "Body: " + bodyType + "\n" +
+        string str = $"RosterID = [{rosterId}], SimulatedID = [{simulatedId}]\n" +
+            "Name: " + firstName + " " + lastName + "\n" + "";
+            /*"Body: " + bodyType + "\n" +
             "Head: " + headType + "\n" +
             "Ht: " + height + "\n" +
             "Wt: " + weight + "\n" +
             "Male: " + isMale + "\n" +
             "SkinTone: " + skinTone + "\n" +
-            "Hair: " + hairStyle + "," + hairColor + "\n";
+            "Hair: " + hairStyle + "," + hairColor + "\n";*/
         return str;
     }
 }

@@ -148,24 +148,24 @@ public class UI_Roster : MonoBehaviour
         rosterFormContainer.GetComponent<RosterForm>().enabled = true;
     }
 
-    private void handleUpdatedConstraint(string onField, string value, FormButtonState newState)
+    private void handleUpdatedConstraint(CPD_Type cpdType, string value, FormButtonState newState)
     {
         switch (newState)
         {
             case FormButtonState.Unknown:
-                roster.addConstraint(onField, value);
+                roster.rosterConstraints.addConstraint(cpdType, value);
                 break;
             case FormButtonState.Eliminated:
-                roster.removeConstraint(onField, value);
+                roster.rosterConstraints.removeConstraint(cpdType, value);
                 break;
             case FormButtonState.Confirmed:
-                roster.onlyConstraint(onField, value);
+                roster.rosterConstraints.onlyConstraint(cpdType, value);
                 break;
         }
     }
 
-    private void handleDeconfirmed(string group, List<string> exclude)
+    private void handleDeconfirmed(CPD_Type cpdType, List<string> exclude)
     {
-        roster.reInitializeVariants(group, exclude);
+        roster.reInitializeVariants(cpdType, exclude);
     }
 }

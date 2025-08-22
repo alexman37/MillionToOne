@@ -13,7 +13,7 @@ public class RosterGen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        roster = new Roster(2000);
+        roster = new Roster(378);
         //roster.DebugLogRoster();
         rosterCreationDone.Invoke(roster);
     }

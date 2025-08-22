@@ -8,25 +8,84 @@ public class Roster
 {
     public int simulatedTotalRosterSize; // total number of "characters" we're working with
     private int simulatedCurrentRosterSize;
+    const int TOTAL_ROSTER_PERMUTATIONS = 999999; // How many different rosters can there be?
+    private int rosterSeedOffset;
+
     public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
     public List<Sprite> rosterSprites; //consistent list of the portrait per each character
-    public static RosterDemographicMap rosterDMap;
+
+    public RosterConstraints rosterConstraints;
+
+    public static List<CPD> cpdInstances;      // All CPD singletons
+    public static List<CPD> cpdConstrainables; // Only the constrainable CPDs (packaged in sim ID, in this order)
+    protected static List<int> cpdCounts; // optimization for simulated ID unpacking
+    protected static List<int> simIDtourGuide; // the first CPD should be multiplied by index 0...the second by index 1...etc. to get sim ID.
+    public static Dictionary<CPD_Type, CPD> cpdByType;
 
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
 
+    // Most of this is first-time setup only
     public Roster(int numChars)
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
+
+        // No need to recreate CPDs on each load
+        if(cpdInstances == null)
+        {
+            cpdInstances = new List<CPD>
+            {
+                new CPD_FilePath(CPD_Type.HairStyle, true, "hairStylesTxt", "CharSprites/Hair/"),
+                new CPD_Color(CPD_Type.HairColor, true, "hairTonesTxt"),
+                new CPD_Color(CPD_Type.SkinTone, true, "skinTonesTxt"),
+                new CPD_FilePath(CPD_Type.BodyType, true, "bodyTypesTxt", "CharSprites/Body/"),
+                new CPD_FilePath(CPD_Type.Face, false, "faceTypesTxt", "CharSprites/Face/"),
+                new CPD_FilePath(CPD_Type.HeadType, false, "headTypesTxt", "CharSprites/Head/"),
+            };
+            cpdConstrainables = new List<CPD>();
+            cpdCounts = new List<int>();
+            simIDtourGuide = new List<int>();
+            // Set constrainables list
+            for (int c = 0; c < cpdInstances.Count; c++)
+            {
+                if (cpdInstances[c].constrainable)
+                {
+                    cpdConstrainables.Add(cpdInstances[c]);
+                }
+            }
+            // Set helpers for constrainables list
+            for(int c = 0; c < cpdConstrainables.Count; c++)
+            {
+                int nextOffset = 1;
+                cpdCounts.Add(cpdConstrainables[c].categories.Count);
+                for (int x = c + 1; x < cpdConstrainables.Count; x++)
+                {
+                    nextOffset *= cpdConstrainables[x].categories.Count;
+                }
+                simIDtourGuide.Add(nextOffset);
+            }
+        }
+
+        if(cpdByType == null)
+        {
+            cpdByType = new Dictionary<CPD_Type, CPD>();
+            foreach(CPD cpd in cpdInstances)
+            {
+                cpdByType.Add(cpd.cpdType, cpd);
+            }
+        }
+
         simulatedTotalRosterSize = numChars;
         simulatedCurrentRosterSize = numChars;
 
         createRoster();
     }
 
+    // called each time you start a new game
     public void createRoster()
     {
+        rosterSeedOffset = UnityEngine.Random.Range(0, TOTAL_ROSTER_PERMUTATIONS);
         if (roster != null)
         {
             roster.Clear();
@@ -37,34 +96,21 @@ public class Roster
             rosterSprites = new List<Sprite>();
         }
 
-        // Initialize all CPDs
-        CPD_Hair cpd_hair = new CPD_Hair();
-        CPD_HairColor cpd_hairColor = new CPD_HairColor();
-        CPD_SkinTone cpd_skinTone = new CPD_SkinTone();
-        CPD_BodyType cpd_bodyType = new CPD_BodyType();
-        CPD_HeadType cpd_headType = new CPD_HeadType();
-        CPD_Face cpd_face = new CPD_Face();
-
-        // Generate Demographic Mappings.
-        rosterDMap = new RosterDemographicMap();
-        rosterDMap.constraints = new RosterConstraintList();
-
-        initializeConstraint("CPD_Hair", cpd_hair.variants, true);
-        initializeConstraint("CPD_HairColor", cpd_hairColor.variants, true);
-        initializeConstraint("CPD_SkinTone", cpd_skinTone.variants, true);
-        initializeConstraint("CPD_BodyType", cpd_bodyType.variants, true);
-
+        // "Clear" also serves as initialization for the constraints lists if need be
+        rosterConstraints = new RosterConstraints();
+        foreach (CPD cpd in cpdConstrainables)
+        {
+            rosterConstraints.clearConstraints(cpd);
+        }
         
-        applyConstraints(rosterDMap.constraints);
+        applyConstraints(rosterConstraints);
 
         // TODO REMOVE
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            roster.Add(new Character(
-                i //the id
-            ));
+            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints);
 
-            roster[i].randomizeDemographicsWithConstraints(rosterDMap.constraints);
+            roster.Add(new Character(i, simId));
 
             //Debug.Log("roster gen " + roster[i]);
             rosterSprites.Add(CharSpriteGen.genSpriteFromLayers(roster[i]));
@@ -73,68 +119,21 @@ public class Roster
         rosterReady.Invoke();
     }
 
-    public void initializeConstraint(string fieldName, CPD_Field[] variants, bool firstTime)
-    {
-        HashSet<string> uniques = new HashSet<string>();
-        foreach(CPD_Field field in variants)
-        {
-            foreach (string s in field.generalDesc)
-            {
-                rosterDMap.constraints.addConstraint(fieldName, s);
-                uniques.Add(s);
-            }
-        }
-        if(firstTime) rosterDMap.uniqueDescriptions.Add(fieldName, uniques);
-    }
-
-    /// <summary>
-    /// Adds an acceptable value to the constrained list for a particular field.
-    /// </summary>
-    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
-    /// <param name="value">Value to accept (EG Gray, White...)</param>
-    public void addConstraint(string fieldName, string value)
-    {
-        // Add to constraints list
-        rosterDMap.constraints.addConstraint(fieldName, value);
-        redrawRosterVis();
-    }
-
-    /// <summary>
-    /// Removes an acceptable value from the constrained list for a particular field.
-    /// </summary>
-    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
-    /// <param name="value">Value to no longer accept (EG Gray, White...)</param>
-    public void removeConstraint(string fieldName, string value)
-    {
-        // Add to constraints list
-        rosterDMap.constraints.removeConstraint(fieldName, value);
-        redrawRosterVis();
-    }
-
-    /// <summary>
-    /// Makes the given value the only acceptable value for a particular field's constraints
-    /// </summary>
-    /// <param name="fieldName">Field name to constrain (EG Hair, HairColor...)</param>
-    /// <param name="value">Sole value to accept (EG Gray, White...)</param>
-    public void onlyConstraint(string fieldName, string value)
-    {
-        // Add to constraints list
-        rosterDMap.constraints.onlyConstraint(fieldName, value);
-        redrawRosterVis();
-    }
 
 
     private void redrawRosterVis()
     {
         // TODO do this in a separate step.
-        applyConstraints(rosterDMap.constraints);
+        applyConstraints(rosterConstraints);
 
         // Characters to show
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            roster[i] = new Character(i);
+            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints);
 
-            roster[i].randomizeDemographicsWithConstraints(rosterDMap.constraints);
+            roster.Add(new Character(i, simId));
+
+            roster[i].randomizeDemographics();
 
             rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
         }
@@ -142,36 +141,40 @@ public class Roster
         UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
     }
 
-    public void applyConstraints(RosterConstraintList constraints)
+    public void applyConstraints(RosterConstraints constraints)
     {
+        // The roster size will decrease when applying a new constraint (and vice versa)
         int newRosterSize = simulatedTotalRosterSize;
-        // Because of RosterConstraintList's strict adherence to one entry per CPD, we can assume each entry represents a unique CPD
-        // And all possible values for that CPD are included.
+
+        List<CPD_Type> types = new List<CPD_Type>(constraints.allCurrentConstraints.Keys);
         
-        foreach (RosterConstraint constraint in constraints.allCurrentConstraints)
+        foreach (CPD_Type tp in types)
         {
-            CPD_Field[] fields = stringToCPD(constraint.onField, constraint.possibleValues);
+            List<CPD_Variant> variants = cpdByType[tp].getConstrainedCategoryVariants(constraints.allCurrentConstraints[tp]);
+
             float accumulatedProbability = 0;
 
-            foreach (CPD_Field field in fields)
+            foreach (CPD_Variant var in variants)
             {
-                accumulatedProbability += field.probability;
+                accumulatedProbability += var.probability;
             }
             newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
         }
         simulatedCurrentRosterSize = newRosterSize;
 
+        // TODO +1?
         Debug.Log("New roster size " + newRosterSize);
 
         constrainedResult.Invoke(simulatedCurrentRosterSize);
     }
 
-    public void reInitializeVariants(string group, List<string> buttonsAreOff)
+    public void reInitializeVariants(CPD_Type onType, List<string> buttonsAreOff)
     {
-        initializeConstraintFromString(group);
+        CPD cpd = cpdByType[onType];
+        rosterConstraints.clearConstraints(cpd);
         foreach(string exclude in buttonsAreOff)
         {
-            removeConstraint(group, exclude);
+            rosterConstraints.addConstraint(cpd.cpdType, exclude);
         }
     }
 
@@ -183,125 +186,150 @@ public class Roster
         }
     }
 
-    // fugly ass method
-    private CPD_Field[] stringToCPD(string str, HashSet<string> possibles)
+
+
+
+    /// Everything to do with the simulated ID
+    public static class SimulatedID
     {
-        switch (str)
+        /// <summary>
+        /// Given a "simulated ID" in [0, rosterSize), return all CPD variants this character would generate with.
+        ///     The ID itself contains what category each field will be. Every character is guaranteed a unique set of categories,
+        ///     and the specific variants within those categories are chosen by random seed.
+        /// For variants and all other non-constrainable, "cosmetic" CPD's, the simulated ID also acts as a random seed.
+        /// Setting the random seed before getting those values ensures we always "randomly generate" the same output for the character.
+        /// There's just one catch: We have to offset every random seed by a constant amount, so we do not get the exact same roster every time.
+        /// </summary>
+        /// <param name="simulatedId">Simulated id in [0, rosterSize)</param>
+        /// <returns>All variants of the character with this simulated ID</returns>
+        public static List<CPD_Variant> unpackSimulatedID(int simulatedId)
         {
-            case "CPD_Hair": return CPD_Hair.instance.getPossibleValuesFromGenDesc(possibles);
-            case "CPD_BodyType": return CPD_BodyType.instance.getPossibleValuesFromGenDesc(possibles);
-            case "CPD_HairColor": return CPD_HairColor.instance.getPossibleValuesFromGenDesc(possibles);
-            case "CPD_SkinTone": return CPD_SkinTone.instance.getPossibleValuesFromGenDesc(possibles);
-            default: return null;
-        }
-    }
+            UnityEngine.Random.InitState(simulatedId); // TODO: Add by rosterOffset to make every game random.
 
-    private void initializeConstraintFromString(string str)
-    {
-        switch (str)
-        {
-            case "CPD_Hair": initializeConstraint(str, CPD_Hair.instance.variants, false); break;
-            case "CPD_BodyType": initializeConstraint(str, CPD_BodyType.instance.variants, false); break;
-            case "CPD_HairColor": initializeConstraint(str, CPD_HairColor.instance.variants, false); break;
-            case "CPD_SkinTone": initializeConstraint(str, CPD_SkinTone.instance.variants, false); break;
-            default: break;
-        }
-    }
-}
-
-public class RosterDemographicMap
-{
-    public Dictionary<string, HashSet<string>> uniqueDescriptions;
-    public RosterConstraintList constraints;
-
-    public RosterDemographicMap()
-    {
-        uniqueDescriptions = new Dictionary<string, HashSet<string>>();
-    }
-}
-
-public class RosterConstraintList
-{
-    public List<RosterConstraint> allCurrentConstraints;
-
-    public RosterConstraintList()
-    {
-        this.allCurrentConstraints = new List<RosterConstraint>();
-    }
-
-    // Add to constraints list
-    public void addConstraint(string fieldTypeName, string constraint)
-    {
-        bool found = false;
-        foreach(RosterConstraint c in allCurrentConstraints)
-        {
-            if (c.onField == fieldTypeName)
+            // We gotta get all the categories associated with each sim ID - one at a time.
+            List<CPD_Variant> vars = new List<CPD_Variant>();
+            int c = 0;
+            for (int iter = 0; iter < cpdInstances.Count; iter++)
             {
-                found = true;
-                if (!c.possibleValues.Contains(constraint))
+                // Two distinct cases. If the CPD is constrainable it directly affects simulated ID. Otherwise it's just "random".
+                if(cpdInstances[iter].constrainable)
                 {
-                    c.possibleValues.Add(constraint);
-                }
-                break;
-            }
-        }
+                    int currCPDcategory = 0;
 
-        if(!found) {
-            allCurrentConstraints.Add(new RosterConstraint(fieldTypeName, new HashSet<string> { constraint }));
-        }
-    }
+                    CPD currCpd = cpdConstrainables[c];
+                    currCPDcategory = Mathf.FloorToInt(simulatedId / simIDtourGuide[c]);
+                    List<CPD_Variant> possibles = currCpd.getPossibleValuesFromCategory(currCpd.categories[currCPDcategory]);
+                    vars.Add(possibles[UnityEngine.Random.Range(0, possibles.Count)]);
 
-    public void removeConstraint(string fieldTypeName, string constraint)
-    {
-        bool found = false;
-        foreach (RosterConstraint c in allCurrentConstraints)
-        {
-            if (c.onField == fieldTypeName)
-            {
-                found = true;
-                if (c.possibleValues.Contains(constraint))
+                    simulatedId -= simIDtourGuide[c] * currCPDcategory;
+                    c++;
+                } else
                 {
-                    c.possibleValues.Remove(constraint);
+                    vars.Add(cpdInstances[iter].getRandom());
                 }
-                break;
+                
             }
+
+            return vars;
         }
 
-        if (!found)
-        {
-            Debug.LogWarning($"Didn't find a field {fieldTypeName} to remove constraints from.");
-        }
-    }
 
-    public void onlyConstraint(string fieldTypeName, string constraint)
-    {
-        bool found = false;
-        foreach (RosterConstraint c in allCurrentConstraints)
+        /// <summary>
+        /// Given some roster constraints, generate a random simulated ID for this character.
+        /// For any CPDs with constraints, we must choose a value allowed by them.
+        /// For any other CPDs without constraints, we can randomize them.
+        /// </summary>
+        /// <param name="constraints"></param>
+        /// <returns></returns>
+        public static int getRandomSimulatedID(RosterConstraints constraints)
         {
-            if (c.onField == fieldTypeName)
+            int workingID = 0;
+            for (int c = 0; c < cpdConstrainables.Count; c++)
             {
-                found = true;
-                c.possibleValues.Clear();
-                c.possibleValues.Add(constraint);
-                break;
-            }
-        }
+                CPD currCpd = cpdConstrainables[c];
 
-        if (!found)
-        {
-            allCurrentConstraints.Add(new RosterConstraint(fieldTypeName, new HashSet<string> { constraint }));
+                // If being constrained, carefully consider which values are allowed...
+                if (constraints.allCurrentConstraints.ContainsKey(currCpd.cpdType))
+                {
+                    (int catId, int varId) = currCpd.getRandomConstrainedIndex(constraints.allCurrentConstraints[currCpd.cpdType]);
+                    workingID += simIDtourGuide[c] * catId;
+                }
+                // Otherwise you can just pick anything...
+                else
+                {
+                    workingID += simIDtourGuide[c] * currCpd.getRandomIndex();
+                }
+            }
+            return workingID;
         }
     }
 }
 
-public class RosterConstraint
-{
-    public string onField;
-    public HashSet<string> possibleValues; // GENERIC NAMES, not actual, fully descriptive names.
 
-    public RosterConstraint(string onField, HashSet<string> acceptableVals)
+
+
+
+/// <summary>
+/// List of roster constraints - what categories of what CPD's to sort by
+/// </summary>
+public class RosterConstraints
+{
+    // What CPD type are you restricting, and, what categories in that CPD are you allowing?
+    public Dictionary<CPD_Type, HashSet<string>> allCurrentConstraints;
+
+    public RosterConstraints()
     {
-        this.onField = onField;
-        this.possibleValues = acceptableVals;
+        this.allCurrentConstraints = new Dictionary<CPD_Type, HashSet<string>>();
+    }
+
+    /// <summary>
+    /// Adds a category to the constrained list for a particular CPD (do not accept this category.)
+    /// </summary>
+    /// <param name="cpd">CPD to constrain (EG HairStyle, HairColor...)</param>
+    /// <param name="constraint">This category will no longer be accepted</param>
+    public void addConstraint(CPD_Type onType, string constraint)
+    {
+        allCurrentConstraints[onType].Add(constraint);
+    }
+
+    /// <summary>
+    /// Removes a category from the constrained list for a particular CPD (the category will be allowed again.)
+    /// </summary>
+    /// <param name="cpd">CPD to constrain (EG HairStyle, HairColor...)</param>
+    /// <param name="constraint">This category will once again be allowed</param>
+    public void removeConstraint(CPD_Type onType, string constraint)
+    {
+        allCurrentConstraints[onType].Remove(constraint);
+    }
+
+    /// <summary>
+    /// Makes the given value the only acceptable value for a particular field's constraints
+    /// </summary>
+    /// <param name="cpd">CPD to constrain (EG HairStyle, HairColor...)</param>
+    /// <param name="constraint">Restricts everything but this category</param>
+    public void onlyConstraint(CPD_Type onType, string constraint)
+    {
+        allCurrentConstraints[onType].Clear();
+        Roster.cpdByType[onType].categories.ForEach(cat => allCurrentConstraints[onType].Add(cat));
+        allCurrentConstraints[onType].Remove(constraint);
+    }
+
+    /// <summary>
+    /// Removes all constraints from a CPD (all categories will be allowed again)
+    /// </summary>
+    /// <param name="cpd">Clear all constraints from this CPD</param>
+    public void clearConstraints(CPD cpd)
+    {
+        CPD_Type onType = cpd.cpdType;
+        if (allCurrentConstraints.ContainsKey(onType))
+        {
+            allCurrentConstraints[onType].Clear();
+        }
+
+        else
+        {
+            Debug.LogWarning($"Setting up constraints for {onType}");
+            allCurrentConstraints.Add(onType, new HashSet<string>());
+        }
     }
 }

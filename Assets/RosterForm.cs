@@ -7,7 +7,7 @@ public class RosterForm : MonoBehaviour
     public static RosterForm instance;
 
     public GameObject formButtonGroupTemplate;
-    string[] formFields = new string[] { "CPD_Hair", "CPD_HairColor", "CPD_SkinTone", "CPD_BodyType" };
+    CPD[] formFields;
 
     private float nextFormGroupOffset = 0;
 
@@ -17,25 +17,26 @@ public class RosterForm : MonoBehaviour
         if (instance == null) instance = this;
         else Destroy(gameObject);
 
+        formFields = Roster.cpdConstrainables.ToArray();
         createFormButtonGroups();
     }
 
     // Constant function...
     public void createFormButtonGroups()
     {
-        foreach(string s in formFields)
+        foreach(CPD cpd in formFields)
         {
-            createWithParameters(s, Roster.rosterDMap.uniqueDescriptions[s]);
+            createWithParameters(cpd.cpdType, cpd.categories);
         }
     }
 
-    private void createWithParameters(string group, HashSet<string> values)
+    private void createWithParameters(CPD_Type cpdType, List<string> cpdCategories)
     {
         GameObject next = GameObject.Instantiate(formButtonGroupTemplate, this.transform);
-        next.name = group;
+        next.name = cpdType.ToString();
 
         FormButtonGroup formGroup = next.GetComponent<FormButtonGroup>();
 
-        nextFormGroupOffset += formGroup.buildFormButtonGroup(group, values, -nextFormGroupOffset) + 10;
+        nextFormGroupOffset += formGroup.buildFormButtonGroup(cpdType, cpdCategories, -nextFormGroupOffset) + 10;
     }
 }

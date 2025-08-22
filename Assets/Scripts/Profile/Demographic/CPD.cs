@@ -6,40 +6,123 @@ using UnityEngine;
 /// "Character Profile Demographic." A single feature that a character has, such as their hair, hair color, or skin tone.
 /// A complete character is made up of multiple of these.
 /// </summary>
-public class CPD<T> where T : CPD_Field, new()
+public abstract class CPD
 {
-    private string propertiesPath;
+    public CPD_Type cpdType;
+    protected string propertiesPath;
+    public bool constrainable;
+
+    protected float probCounter = 0.0f;
+    protected float probX = 0.0f;
+
+    public List<CPD_Variant> variants;
+    public List<string> categories;
+    protected Dictionary<string, int> categoryIndices;
+    protected Dictionary<string, List<CPD_Variant>> categoriesToVariants;
+
+    public abstract List<CPD_Variant> initialize();
+
+    public CPD_Variant getRandom()
+    {
+        return variants[Random.Range(0, variants.Count)];
+    }
+
+    public int getRandomIndex()
+    {
+        return Random.Range(0, variants.Count);
+    }
+
+    public CPD_Variant getRandomConstrained(HashSet<string> restrictedCats)
+    {
+        List<CPD_Variant> allPossible = new List<CPD_Variant>();
+        foreach(string cat in categories)
+        {
+            if(!restrictedCats.Contains(cat))
+            {
+                allPossible.AddRange(categoriesToVariants[cat]);
+            }
+        }
+        if (allPossible.Count == 0) return null;
+        else return allPossible[Random.Range(0, allPossible.Count)];
+    }
+
+    public (int catId, int varId) getRandomConstrainedIndex(HashSet<string> restrictedCats)
+    {
+        CPD_Variant chosen = getRandomConstrained(restrictedCats);
+        return (categoryIndices[chosen.category], chosen.cpdID);
+    }
+
+    // For a single constraint
+    public List<CPD_Variant> getPossibleValuesFromCategory(string cat)
+    {
+        return categoriesToVariants[cat];
+    }
+
+    // For a single constraint
+    public List<CPD_Variant> getConstrainedCategoryVariants(HashSet<string> restrictedCats)
+    {
+        List<CPD_Variant> allPossible = new List<CPD_Variant>();
+        foreach (string cat in categories)
+        {
+            if(!restrictedCats.Contains(cat))
+            {
+                allPossible.AddRange(getPossibleValuesFromCategory(cat));
+            }
+        }
+        return allPossible;
+    }
+
+    // For multiple constraints
+    public List<CPD_Variant> getPossibleValuesFromCategory(IEnumerable categories)
+    {
+        List<CPD_Variant> temp2d = new List<CPD_Variant>();
+        foreach (string cat in categories)
+        {
+            temp2d.AddRange(categoriesToVariants[cat]);
+        }
+        return temp2d;
+    }
+}
+
+
+public enum CPD_Type
+{
+    // Constrainable
+    HairStyle,
+    HairColor,
+    SkinTone,
+    BodyType, // TODO remove
+
+    // Not constrainable
+    Face,
+    HeadType
+}
+
+
+// A CPD where critical values are loaded from a file
+public class CPD_FilePath : CPD
+{
     private string spritesPath;
 
     // Given the path of this CPD's properties file and where its sprites are stored, we can initialize all variants.
-    public CPD(string propertiesPath, string spritesPath, CPD_Type tp)
+    public CPD_FilePath(CPD_Type cat, bool constrainable, string propertiesPath, string spritesPath)
     {
+        this.constrainable = constrainable;
+        this.cpdType = cat;
         this.propertiesPath = propertiesPath;
-
-        if(tp == CPD_Type.Filename)
-        {
-            this.spritesPath = spritesPath;
-            variants = initialize_FileName();
-        }
-        else
-        {
-            variants = initialize_Color();
-        }
-            
+        this.spritesPath = spritesPath;
+        initialize(); 
     }
 
-    private float probCounter = 0.0f;
-    private float probX = 0.0f;
-
-    public T[] variants;
-    private Dictionary<string, List<T>> genericNamesToVariants; 
-
-    // Create all variants of this CPD from the properties path (FileName variant).
-    private T[] initialize_FileName()
+    public override List<CPD_Variant> initialize()
     {
-        TextAsset txt = Resources.Load<TextAsset>(propertiesPath);
+        TextAsset txt = Resources.Load<TextAsset>(propertiesPath); // TODO use assetbundles instead?
         string[] lines = txt.text.Split('\n');
-        List<T> temporaryStorage = new List<T>();
+
+        variants = new List<CPD_Variant>();
+        categoriesToVariants = new Dictionary<string, List<CPD_Variant>>();
+        categories = new List<string>();
+        categoryIndices = new Dictionary<string, int>();
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -61,22 +144,32 @@ public class CPD<T> where T : CPD_Field, new()
                     probCounter += p;
                 }
 
-                T st = new T();
+                string cat = fields[3];
+                if (!categoriesToVariants.ContainsKey(cat))
+                {
+                    categoriesToVariants.Add(cat, new List<CPD_Variant>());
+                    categories.Add(cat);
+                    categoryIndices.Add(cat, categories.Count - 1);
+                }
 
-                CPD_Field_FileName variant = st as CPD_Field_FileName;
-                variant.id = i;
-                variant.name = fields[1];
-                variant.generalDesc = fields[3].Split(',');
-                variant.probability = p;
-                variant.filename = spritesPath + fields[0];
+                CPD_Variant variant = new CPD_Variant(
+                    cpdType,
+                    categoriesToVariants[cat].Count,
+                    variants.Count,
+                    new CPD_CritVal_Filepath(spritesPath + fields[0]),
+                    fields[1],
+                    cat,
+                    p
+                );
 
-                temporaryStorage.Add(variant as T);
+                variants.Add(variant);
+                categoriesToVariants[cat].Add(variant);
             }
         }
 
         if (probCounter > 1)
         {
-            Debug.LogError("Failed to use the CPD FileName " + new T().GetType() + ", probabilities do not equal 1");
+            Debug.LogError("Failed to use the CPD FileName " + cpdType + ", probabilities do not equal 1");
             return null;
         }
         else if (probX > 0)
@@ -84,41 +177,39 @@ public class CPD<T> where T : CPD_Field, new()
             probX = (1 - probCounter) / probX;
         }
 
-        T[] vars = new T[temporaryStorage.Count];
-        genericNamesToVariants = new Dictionary<string, List<T>>();
-        for (int i = 0; i < temporaryStorage.Count; i++)
+        // Lastly, if we're giving all elements equal probability, do so here.
+        for (int i = 0; i < variants.Count; i++)
         {
-            T st = temporaryStorage[i];
-
-            if (st.probability == -1)
+            if (variants[i].probability == -1)
             {
-                st.probability = probX;
-            }
-
-            vars[i] = st;
-
-            foreach(string gen in st.generalDesc)
-            {
-                if (!genericNamesToVariants.ContainsKey(gen))
-                {
-                    genericNamesToVariants[gen] = new List<T> { st };
-                }
-                else
-                {
-                    genericNamesToVariants[gen].Add(st);
-                }
+                variants[i].probability = probX;
             }
         }
 
-        return vars;
+        return variants;
+    }
+}
+
+public class CPD_Color : CPD
+{
+    // Given the path of this CPD's properties file and where its sprites are stored, we can initialize all variants.
+    public CPD_Color(CPD_Type cat, bool constrainable, string propertiesPath)
+    {
+        this.constrainable = constrainable;
+        this.cpdType = cat;
+        this.propertiesPath = propertiesPath;
+        initialize();
     }
 
-    // Create all variants of this CPD from the properties path (Color variant).
-    private T[] initialize_Color()
+    public override List<CPD_Variant> initialize()
     {
         TextAsset txt = Resources.Load<TextAsset>(propertiesPath);
         string[] lines = txt.text.Split('\n');
-        List<T> temporaryStorage = new List<T>();
+
+        variants = new List<CPD_Variant>();
+        categoriesToVariants = new Dictionary<string, List<CPD_Variant>>();
+        categoryIndices = new Dictionary<string, int>();
+        categories = new List<string>();
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -160,22 +251,32 @@ public class CPD<T> where T : CPD_Field, new()
                     probCounter += p;
                 }
 
-                T st = new T();
+                string cat = fields[3];
+                if (!categoriesToVariants.ContainsKey(cat))
+                {
+                    categoriesToVariants.Add(cat, new List<CPD_Variant>());
+                    categories.Add(cat);
+                    categoryIndices.Add(cat, categories.Count - 1);
+                }
 
-                CPD_Field_Color variant = st as CPD_Field_Color;
-                variant.id = i;
-                variant.name = fields[0];
-                variant.generalDesc = fields[3].Split(',');
-                variant.probability = p;
-                variant.color = col;
+                CPD_Variant variant = new CPD_Variant(
+                    cpdType,
+                    categoriesToVariants[cat].Count,
+                    variants.Count,
+                    new CPD_CritVal_Color(col),
+                    fields[0],
+                    cat,
+                    p
+                );
 
-                temporaryStorage.Add(variant as T);
+                variants.Add(variant);
+                categoriesToVariants[cat].Add(variant);
             }
         }
 
         if (probCounter > 1)
         {
-            Debug.LogError("Failed to use the CPD Color " + new T().GetType() + ", probabilities do not equal 1");
+            Debug.LogError("Failed to use the CPD Color " + cpdType + ", probabilities do not equal 1");
             return null;
         }
         else if (probX > 0)
@@ -183,133 +284,50 @@ public class CPD<T> where T : CPD_Field, new()
             probX = (1 - probCounter) / probX;
         }
 
-        T[] vars = new T[temporaryStorage.Count];
-        genericNamesToVariants = new Dictionary<string, List<T>>();
-        for (int i = 0; i < temporaryStorage.Count; i++)
+        for (int i = 0; i < variants.Count; i++)
         {
-            T st = temporaryStorage[i];
-
-            if (st.probability == -1)
+            if (variants[i].probability == -1)
             {
-                st.probability = probX;
-            }
-
-            vars[i] = st;
-
-            foreach (string gen in st.generalDesc)
-            {
-                if (!genericNamesToVariants.ContainsKey(gen))
-                {
-                    genericNamesToVariants[gen] = new List<T> { st };
-                }
-                else
-                {
-                    genericNamesToVariants[gen].Add(st);
-                }
+                variants[i].probability = probX;
             }
         }
 
-        return vars;
-    }
-
-    public T getRandom()
-    {
-        return variants[Random.Range(0, variants.Length)];
-    }
-
-    public T getRandomConstrained(HashSet<string> acceptableValues)
-    {
-        List<T> allPossible = new List<T>();
-        foreach(string acceptable in acceptableValues)
-        {
-            allPossible.AddRange(genericNamesToVariants[acceptable]);
-        }
-        if (allPossible.Count == 0) return null;
-        else return allPossible[Random.Range(0, allPossible.Count)];
-    }
-
-    // For a single constraint
-    public T[] getPossibleValuesFromGenDesc(string genDesc)
-    {
-        T[] arrs = new T[genericNamesToVariants[genDesc].Count];
-        for(int i = 0; i < genericNamesToVariants[genDesc].Count; i++)
-        {
-            arrs[i] = genericNamesToVariants[genDesc][i];
-        }
-        return arrs;
-    }
-
-    // For multiple constraints
-    public T[] getPossibleValuesFromGenDesc(IEnumerable genDescs)
-    {
-        List<T[]> temp2d = new List<T[]>();
-        HashSet<int> underTheHoodDuplicates = new HashSet<int>();
-        int count = 0;
-        foreach (string genDesc in genDescs)
-        {
-            T[] arrs = new T[genericNamesToVariants[genDesc].Count];
-            List<T> cachedList = genericNamesToVariants[genDesc];
-
-            for (int i = 0; i < arrs.Length; i++)
-            {
-                if(!underTheHoodDuplicates.Contains(cachedList[i].id))
-                {
-                    arrs[i] = cachedList[i];
-                    count += 1;
-                    underTheHoodDuplicates.Add(cachedList[i].id);
-                }
-            }
-            temp2d.Add(arrs);
-            
-        }
-
-        T[] merged = new T[count];
-        count = 0;
-        foreach(T[] items in temp2d)
-        {
-            for(int i = 0; i < items.Length; i++)
-            {
-                if(items[i] != null)
-                {
-                    merged[count] = items[i];
-                    count++;
-                }
-            }
-        }
-
-        return merged;
+        return variants;
     }
 }
 
-public enum CPD_Type
+public class CPD_Number : CPD
 {
-    Filename,
-    Color
+    public override List<CPD_Variant> initialize()
+    {
+        throw new System.NotImplementedException();
+    }
 }
+
+
 
 /// <summary>
-/// Defines the broad properties of all variants of a CPD.
-/// For example, for Body types - you make a BodyType class that inherits this,
-/// Then create a single instance for each new body type.
-/// There are methods in place to select a specific BodyType by ID, or just get a random one.
+/// Defines a specific variant of a CPD
+/// For example, the HairStyle CPD might have a "normal1" and "normal2" variant, both of which fall under the "normal" category
 /// </summary>
-public class CPD_Field
+public class CPD_Variant
 {
-    public int id;
+    public CPD_Type cpdType;
+    public int categoryID; // order within category.
+    public int cpdID; // order within CPD.
+    public CPD_CriticalValue critVal; // the actual "thing" stored in this CPD (filepath? color? number? etc...)
     public string name;
-    public string[] generalDesc;
+    public string category;
     public float probability;
 
-    public CPD_Field()
+    public CPD_Variant(CPD_Type cpdCat, int catID, int cpdID, CPD_CriticalValue critVal, string name, string cat, float prob)
     {
-        // We need this constructore for...reasons.
-    }
-
-    public CPD_Field(int id, string name, string[] desc, float prob)
-    {
-        this.id = id;
+        this.cpdType = cpdCat;
+        this.categoryID = catID;
+        this.cpdID = cpdID;
+        this.critVal = critVal;
         this.name = name;
-        this.generalDesc = desc;
+        this.category = cat;
         this.probability = prob;
     }
 
@@ -320,34 +338,32 @@ public class CPD_Field
     }
 }
 
-
-/// <summary>
-/// Most CPD fields which use a sprite or something else have to load it from a file.
-/// </summary>
-public class CPD_Field_FileName : CPD_Field
+public abstract class CPD_CriticalValue
 {
-    public string filename;
 
-    public CPD_Field_FileName(int id, string name, string[] general, float probability, string filename) : base(id, name, general, probability)
+}
+
+public class CPD_CritVal_Filepath : CPD_CriticalValue
+{
+    public string filepath;
+
+    public CPD_CritVal_Filepath(string f)
     {
-        this.filename = filename;
+        filepath = f;
     }
 
     public Sprite getSprite()
     {
-        return Resources.Load<Sprite>(filename);
+        return Resources.Load<Sprite>(filepath);
     }
 }
 
-/// <summary>
-/// Some CPD fields are simply differences in color
-/// </summary>
-public class CPD_Field_Color : CPD_Field
+public class CPD_CritVal_Color : CPD_CriticalValue
 {
-    public Color32 color;
+    public Color col;
 
-    public CPD_Field_Color(int id, string name, string[] general, float probability, Color32 color) : base(id, name, general, probability)
+    public CPD_CritVal_Color(Color c)
     {
-        this.color = color;
+        col = c;
     }
 }

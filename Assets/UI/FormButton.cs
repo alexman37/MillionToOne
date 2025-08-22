@@ -8,8 +8,8 @@ using TMPro;
 public class FormButton : MonoBehaviour
 {
     FormButtonState state;
-    public string onField;
-    public string value;
+    public CPD_Type cpdType;
+    public string category;
     Image img1;
     Image img2;
 
@@ -24,9 +24,9 @@ public class FormButton : MonoBehaviour
     public FormButtonGroup partOfGroup;
 
     // Update a particular field with some new constraints. FormButtonState determines if you add or remove them.
-    public static event Action<string, string, FormButtonState> updatedConstraint;
+    public static event Action<CPD_Type, string, FormButtonState> updatedConstraint;
     // Re-initialize the list of constraints when un-confirming an option. Use pre-existing "no" values.
-    public static event Action<string, List<string>> reinitializeConstraints;
+    public static event Action<CPD_Type, List<string>> reinitializeConstraints;
 
     // Start is called before the first frame update
     void Start()
@@ -46,7 +46,7 @@ public class FormButton : MonoBehaviour
             if (yesTicked)
             {
                 state = FormButtonState.Confirmed;
-                buttonInGroupConfirmed(onField, value, true);
+                buttonInGroupConfirmed(true);
             }
             else
             {
@@ -58,7 +58,7 @@ public class FormButton : MonoBehaviour
                 {
                     state = FormButtonState.Unknown;
                 }
-                buttonInGroupConfirmed(onField, value, false);
+                buttonInGroupConfirmed(false);
             }
 
             updateConstraintForButton();
@@ -100,13 +100,13 @@ public class FormButton : MonoBehaviour
             img2.color = Color.white;
         }
 
-        updatedConstraint.Invoke(onField, value, state);
+        updatedConstraint.Invoke(cpdType, category, state);
     }
 
     /// <summary>
     /// Make sure every other button is either set to NO or 
     /// </summary>
-    private void buttonInGroupConfirmed(string group, string buttonValue, bool wasConfirmed)
+    private void buttonInGroupConfirmed(bool wasConfirmed)
     {
         List<FormButton> buttonsToToggle = partOfGroup.formButtons;
         Debug.Log("There are " + partOfGroup.formButtons.Count + " buttons in this group");
@@ -114,7 +114,7 @@ public class FormButton : MonoBehaviour
 
         foreach(FormButton b in buttonsToToggle)
         {
-            if(b.value != buttonValue)
+            if(b.category != category)
             {
                 b.acceptingInput = !wasConfirmed;
                 b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
@@ -124,11 +124,11 @@ public class FormButton : MonoBehaviour
                 b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
             }
 
-            if(b.noTicked) buttonsAreOff.Add(b.value);
+            if(b.noTicked) buttonsAreOff.Add(b.category);
         }
         if(!wasConfirmed)
         {
-            reinitializeConstraints.Invoke(group, buttonsAreOff);
+            reinitializeConstraints.Invoke(cpdType, buttonsAreOff);
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class FormButtonGroup : MonoBehaviour
 {
-    public string onField;
+    public CPD_Type cpdType;
     public Image img;
 
     public List<FormButton> formButtons;
@@ -21,14 +21,14 @@ public class FormButtonGroup : MonoBehaviour
     /// <summary>
     /// Create all form objects from the template.
     /// </summary>
-    public float buildFormButtonGroup(string onField, HashSet<string> buttonInstructions, float offset)
+    public float buildFormButtonGroup(CPD_Type cpdType, IEnumerable buttonInstructions, float offset)
     {
-        this.onField = onField;
+        this.cpdType = cpdType;
         formButtons = new List<FormButton>();
 
         int count = 0;
         float standardHeight = 0;
-        foreach (string genDesc in buttonInstructions)
+        foreach (string cat in buttonInstructions)
         {
             GameObject next = GameObject.Instantiate(formObjectComponent, transform);
             next.SetActive(true);
@@ -36,12 +36,12 @@ public class FormButtonGroup : MonoBehaviour
             standardHeight = rt.rect.height;
             rt.anchoredPosition += new Vector2(0, count * -standardHeight);
 
-            next.name = genDesc;
+            next.name = cat;
 
             FormButton formButton = next.GetComponent<FormButton>();
-            formButton.onField = onField;
-            formButton.value = genDesc;
-            formButton.title.text = genDesc;
+            formButton.cpdType = cpdType;
+            formButton.category = cat;
+            formButton.title.text = cat;
 
             formButton.partOfGroup = this;
             formButtons.Add(formButton);
