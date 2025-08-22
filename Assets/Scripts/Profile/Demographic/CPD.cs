@@ -72,6 +72,19 @@ public abstract class CPD
         return allPossible;
     }
 
+    public float getProportionOfCategories(HashSet<string> restrictedCats)
+    {
+        int count = 0;
+        foreach (string cat in categories)
+        {
+            if (!restrictedCats.Contains(cat))
+            {
+                count++;
+            }
+        }
+        return ((float)count / (float)categories.Count);
+    }
+
     // For multiple constraints
     public List<CPD_Variant> getPossibleValuesFromCategory(IEnumerable categories)
     {

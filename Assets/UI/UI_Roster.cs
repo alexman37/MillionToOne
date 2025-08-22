@@ -127,7 +127,6 @@ public class UI_Roster : MonoBehaviour
                 Character c = roster.roster[i];
 
                 //instantiate card in correct position
-                Debug.Log(i);
                 Image newCard = createdCards[i].GetComponent<Image>();
 
                 roster.rosterSprites[i].name = i.ToString();
@@ -155,15 +154,16 @@ public class UI_Roster : MonoBehaviour
         switch (newState)
         {
             case FormButtonState.Unknown:
-                roster.rosterConstraints.addConstraint(cpdType, value);
+                roster.rosterConstraints.removeConstraint(cpdType, value);
                 break;
             case FormButtonState.Eliminated:
-                roster.rosterConstraints.removeConstraint(cpdType, value);
+                roster.rosterConstraints.addConstraint(cpdType, value);
                 break;
             case FormButtonState.Confirmed:
                 roster.rosterConstraints.onlyConstraint(cpdType, value);
                 break;
         }
+        Debug.Log(roster.rosterConstraints.allCurrentConstraints[cpdType].Count);
         roster.redrawRosterVis();
     }
 

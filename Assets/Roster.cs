@@ -150,15 +150,16 @@ public class Roster
         
         foreach (CPD_Type tp in types)
         {
-            List<CPD_Variant> variants = cpdByType[tp].getConstrainedCategoryVariants(constraints.allCurrentConstraints[tp]);
+            // Assuming all probabilities are equal.
+            /*List<CPD_Variant> variants = cpdByType[tp].getConstrainedCategoryVariants(constraints.allCurrentConstraints[tp]);
 
             float accumulatedProbability = 0;
 
             foreach (CPD_Variant var in variants)
             {
                 accumulatedProbability += var.probability;
-            }
-            newRosterSize = Mathf.CeilToInt(accumulatedProbability * (float)newRosterSize);
+            }*/
+            newRosterSize = Mathf.RoundToInt(cpdByType[tp].getProportionOfCategories(constraints.allCurrentConstraints[tp]) * (float)newRosterSize);
         }
         simulatedCurrentRosterSize = newRosterSize;
 
