@@ -109,7 +109,7 @@ public class UI_Roster : MonoBehaviour
             newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.rosterSprites[i];
 
             //set portrait and name
-            newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
+            newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.roster[i].simulatedId + ")";
 
             createdCards[i] = newCard.gameObject;
         }
@@ -134,7 +134,7 @@ public class UI_Roster : MonoBehaviour
                 newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.rosterSprites[i];
 
                 //set portrait and name
-                newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true);
+                newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.roster[i].simulatedId + ")";
             }
             for(int i = numPortraits; i < CHARACTERS_TO_SHOW; i++)
             {

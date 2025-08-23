@@ -131,33 +131,41 @@ public class Roster
         applyConstraints(rosterConstraints);
         List<Character> newShownRoster = new List<Character>();
         int size = Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, simulatedCurrentRosterSize);
+        Debug.Log("new rost size " + simulatedCurrentRosterSize);
 
         // Characters to show: first, choose any from the currently shown roster we'd like to keep.
         int count = 0;
-        for (int i = 0; i < UI_Roster.CHARACTERS_TO_SHOW && count < size; i++)
+        currentRosterIDs.Clear();
+        for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, roster.Count) && count < size; i++)
         {
             if (SimulatedID.idMeetsConstraints(roster[i].simulatedId, rosterConstraints))
             {
-                Debug.Log("ID still meets constraints: " + i);
+                Debug.Log("ID still meets constraints: " + roster[i].simulatedId);
+                currentRosterIDs.Add(roster[i].simulatedId);
                 newShownRoster.Add(roster[i]);
                 rosterSprites[count] = rosterSprites[i];
                 count++;
             } else
             {
-                Debug.Log("ID no longer meets constraints: " + i);
+                Debug.Log("ID no longer meets constraints: " + roster[i].simulatedId);
                 currentRosterIDs.Remove(roster[i].simulatedId);
             }
         }
 
+        Debug.Log("INTERMEDIATE SIZE " + currentRosterIDs.Count);
         roster = newShownRoster;
         for (int i = count; i < size; i++)
         {
             int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
+            Debug.Log("sim id " + simId);
 
             roster.Add(new Character(i, simId));
+            Debug.Log("added to " + i);
 
             rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
+            Debug.Log("rostersprites " + i);
             currentRosterIDs.Add(simId);
+            Debug.Log("added final " + i);
         }
 
         UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
@@ -310,7 +318,7 @@ public class Roster
                 for(int i = cpdIndex + 1; i < cpdConstrainables.Count; i++)
                 {
                     // There must be at least one category or there's a problem...
-                    catZeroes += simIDtourGuide[i] * cpdConstrainables[i].getAllConstrainedIndicies(constraints.allCurrentConstraints[currCpd.cpdType])[0];
+                    catZeroes += simIDtourGuide[i] * cpdConstrainables[i].getAllConstrainedIndicies(constraints.allCurrentConstraints[cpdConstrainables[i].cpdType])[0];
                 }
 
                 HashSet<int> newSimIdModifiers = new HashSet<int>();
@@ -319,16 +327,17 @@ public class Roster
                 {
                     for (int l = 0; l < currSimIdModifiers.Count; l++)
                     {
-                        int aNewIndex = currSimIdModifiers[l] + catZeroes;
-                        newSimIdModifiers.Add(aNewIndex);
+                        int aNewModifier = currSimIdModifiers[l];
+                        int aNewIndex = aNewModifier + catZeroes;
+                        newSimIdModifiers.Add(aNewModifier);
                         if (!takenIDs.Contains(aNewIndex))
                         {
-                            Debug.Log("Found a new index successfully: " + aNewIndex);
+                            Debug.Log("Found a new index successfully (1): " + aNewIndex);
                             return aNewIndex;
                         }
                         else
                         {
-                            Debug.Log("Index already taken: " + aNewIndex);
+                            Debug.Log("Index already taken (1): " + aNewIndex);
                         }
                     }
                 } 
@@ -339,8 +348,12 @@ public class Roster
                     {
                         for (int l = 0; l < currSimIdModifiers.Count; l++)
                         {
-                            int aNewIndex = mod + currSimIdModifiers[l] + catZeroes;
-                            newSimIdModifiers.Add(aNewIndex);
+                            Debug.Log("mod " + mod);
+                            Debug.Log("currsim " + currSimIdModifiers[l]);
+                            Debug.Log("zs" + catZeroes);
+                            int aNewModifier = mod + currSimIdModifiers[l];
+                            int aNewIndex = aNewModifier + catZeroes;
+                            newSimIdModifiers.Add(aNewModifier);
                             if (!takenIDs.Contains(aNewIndex))
                             {
                                 Debug.Log("Found a new index successfully: " + aNewIndex);
