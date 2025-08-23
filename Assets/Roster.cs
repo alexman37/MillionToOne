@@ -31,6 +31,16 @@ public class Roster
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
 
+
+    // Optimization for "get Random simulated ID":
+    // In that function, if we fail to get a random ID by lucky chance several times, we do an exhaustive search through all possible sim IDs
+    // Since it has to be done in order, we save our position in the search here...so if we need more sim IDs we can pick up where we left off.
+    protected static bool lastResortSearch = false;
+    protected static int savedCPD = 0;
+    protected static int savedMod = 0;
+    protected static List<int> newSimIdModifiers;
+    protected static List<int> allSimIdModifiers;
+
     // Most of this is first-time setup only
     public Roster()
     {
@@ -120,6 +130,10 @@ public class Roster
             currentRosterIDs.Add(simId);
         }
 
+        lastResortSearch = false;
+        savedCPD = 0;
+        savedMod = 0;
+
         rosterReady.Invoke();
     }
 
@@ -160,6 +174,10 @@ public class Roster
             shownRosterSprites[i] = CharSpriteGen.genSpriteFromLayers(shownRoster[i]);
             currentRosterIDs.Add(simId);
         }
+
+        lastResortSearch = false;
+        savedCPD = 0;
+        savedMod = 0;
 
         UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
     }
@@ -298,8 +316,7 @@ public class Roster
             }
 
             // Worst case scenario: Resort to iteration through all possible IDs. Return the first success.
-            HashSet<int> allSimIdModifiers = new HashSet<int>();
-            for(int cpdIndex = 0; cpdIndex < cpdConstrainables.Count; cpdIndex++)
+            for(int cpdIndex = savedCPD; cpdIndex < cpdConstrainables.Count; cpdIndex++)
             {
                 CPD currCpd = cpdConstrainables[cpdIndex];
 
@@ -316,7 +333,14 @@ public class Roster
                     catZeroes += simIDtourGuide[i] * cpdConstrainables[i].getAllConstrainedIndicies(constraints.allCurrentConstraints[cpdConstrainables[i].cpdType])[0];
                 }
 
-                HashSet<int> newSimIdModifiers = new HashSet<int>();
+                if (savedCPD == 0)
+                {
+                    allSimIdModifiers = new List<int>();
+                }
+                if (savedMod == 0)
+                {
+                    newSimIdModifiers = new List<int>();
+                }
                 // First pass
                 if (allSimIdModifiers.Count == 0)
                 {
@@ -334,10 +358,11 @@ public class Roster
                 // Every subsequent pass
                 else
                 {
-                    foreach (int mod in allSimIdModifiers)
+                    for (int i = savedMod; i < allSimIdModifiers.Count; i++)
                     {
                         for (int l = 0; l < currSimIdModifiers.Count; l++)
                         {
+                            int mod = allSimIdModifiers[i];
                             int aNewModifier = mod + currSimIdModifiers[l];
                             int aNewIndex = aNewModifier + catZeroes;
                             newSimIdModifiers.Add(aNewModifier);
@@ -346,10 +371,13 @@ public class Roster
                                 return aNewIndex;
                             }
                         }
+                        savedMod++;
                     }
                 }
 
                 allSimIdModifiers = newSimIdModifiers;
+                savedCPD++;
+                savedMod = 0;
             }
 
             // Should be impossible
