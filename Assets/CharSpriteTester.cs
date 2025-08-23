@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 
+/// <summary>
+/// Deprecated class for testing sprite generation. Do not use.
+/// </summary>
 public class CharSpriteTester : MonoBehaviour
 {
     public SpriteRenderer charachterImgTemplate;

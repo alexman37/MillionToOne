@@ -3,31 +3,36 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-//Facilitates generation, storage and access of the list of 100 suspects (characters 1-100), and the murder victim (character 0).
+/// <summary>
+/// The database of characters.
+/// How it works at a high level: We don't actually store data for any characters, besides the ones we are showing.
+/// We can load a character exactly as they should be by unpacking their "simulated ID"...more on that below.
+/// </summary>
 public class Roster
 {
-    public int simulatedTotalRosterSize; // total number of "characters" we're working with
-    private int simulatedCurrentRosterSize;
     const int TOTAL_ROSTER_PERMUTATIONS = 999999; // How many different rosters can there be?
-    private int rosterSeedOffset;
+    private int rosterSeedOffset;                 // offset every random seed by this amount. It makes each new game unique.
 
-    public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
-    public List<Sprite> rosterSprites; // the sprites of the currently shown characters (for fast access).
+    public int simulatedTotalRosterSize = 1; // total number of "characters" we're working with
+    private int simulatedCurrentRosterSize = 1; // total number of characters given constraints
+
+    public List<Character> shownRoster; // real characters that actually exist because we had to generate them at some point.
+    public List<Sprite> shownRosterSprites; // the sprites of the currently shown characters (for fast access).
     public HashSet<int> currentRosterIDs; // the simulated IDs of all characters we are currently showing.
 
-    public RosterConstraints rosterConstraints;
+    public RosterConstraints rosterConstraints;  // All constraints currently on the roster
 
     public static List<CPD> cpdInstances;      // All CPD singletons
     public static List<CPD> cpdConstrainables; // Only the constrainable CPDs (packaged in sim ID, in this order)
+    public static Dictionary<CPD_Type, CPD> cpdByType; // get CPD singleton by type
     protected static List<int> cpdCounts; // optimization for simulated ID unpacking
     protected static List<int> simIDtourGuide; // the first CPD should be multiplied by index 0...the second by index 1...etc. to get sim ID.
-    public static Dictionary<CPD_Type, CPD> cpdByType;
 
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
 
     // Most of this is first-time setup only
-    public Roster(int numChars)
+    public Roster()
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
@@ -46,6 +51,7 @@ public class Roster
             };
             cpdConstrainables = new List<CPD>();
             cpdCounts = new List<int>();
+            cpdByType = new Dictionary<CPD_Type, CPD>();
             simIDtourGuide = new List<int>();
             currentRosterIDs = new HashSet<int>();
             // Set constrainables list
@@ -55,12 +61,15 @@ public class Roster
                 {
                     cpdConstrainables.Add(cpdInstances[c]);
                 }
+                cpdByType.Add(cpdInstances[c].cpdType, cpdInstances[c]);
             }
             // Set helpers for constrainables list
             for(int c = 0; c < cpdConstrainables.Count; c++)
             {
                 int nextOffset = 1;
                 cpdCounts.Add(cpdConstrainables[c].categories.Count);
+                simulatedTotalRosterSize *= cpdConstrainables[c].categories.Count;
+
                 for (int x = c + 1; x < cpdConstrainables.Count; x++)
                 {
                     nextOffset *= cpdConstrainables[x].categories.Count;
@@ -69,33 +78,25 @@ public class Roster
             }
         }
 
-        if(cpdByType == null)
-        {
-            cpdByType = new Dictionary<CPD_Type, CPD>();
-            foreach(CPD cpd in cpdInstances)
-            {
-                cpdByType.Add(cpd.cpdType, cpd);
-            }
-        }
-
-        simulatedTotalRosterSize = numChars;
-        simulatedCurrentRosterSize = numChars;
+        simulatedCurrentRosterSize = simulatedTotalRosterSize;
 
         createRoster();
     }
 
-    // called each time you start a new game
+    /// <summary>
+    /// Called each time you start a new game.
+    /// </summary>
     public void createRoster()
     {
         rosterSeedOffset = UnityEngine.Random.Range(0, TOTAL_ROSTER_PERMUTATIONS);
-        if (roster != null)
+        if (shownRoster != null)
         {
-            roster.Clear();
-            rosterSprites.Clear();
+            shownRoster.Clear();
+            shownRosterSprites.Clear();
         } else
         {
-            roster = new List<Character>();
-            rosterSprites = new List<Sprite>();
+            shownRoster = new List<Character>();
+            shownRosterSprites = new List<Sprite>();
         }
 
         // "Clear" also serves as initialization for the constraints lists if need be
@@ -107,15 +108,15 @@ public class Roster
         
         applyConstraints(rosterConstraints);
 
-        // TODO REMOVE
+        // First list generation
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
             int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
-            roster.Add(new Character(i, simId));
+            shownRoster.Add(new Character(i, simId));
 
             //Debug.Log("roster gen " + roster[i]);
-            rosterSprites.Add(CharSpriteGen.genSpriteFromLayers(roster[i]));
+            shownRosterSprites.Add(CharSpriteGen.genSpriteFromLayers(shownRoster[i]));
             currentRosterIDs.Add(simId);
         }
 
@@ -123,54 +124,49 @@ public class Roster
     }
 
 
-
+    /// <summary>
+    /// Redraw the roster with new characters meeting constraints
+    /// </summary>
     public void redrawRosterVis()
     {
-        Debug.Log("redraw roster vis");
-        // TODO do this in a separate step.
         applyConstraints(rosterConstraints);
         List<Character> newShownRoster = new List<Character>();
         int size = Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, simulatedCurrentRosterSize);
-        Debug.Log("new rost size " + simulatedCurrentRosterSize);
 
         // Characters to show: first, choose any from the currently shown roster we'd like to keep.
         int count = 0;
         currentRosterIDs.Clear();
-        for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, roster.Count) && count < size; i++)
+        for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, shownRoster.Count) && count < size; i++)
         {
-            if (SimulatedID.idMeetsConstraints(roster[i].simulatedId, rosterConstraints))
+            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, rosterConstraints))
             {
-                Debug.Log("ID still meets constraints: " + roster[i].simulatedId);
-                currentRosterIDs.Add(roster[i].simulatedId);
-                newShownRoster.Add(roster[i]);
-                rosterSprites[count] = rosterSprites[i];
+                currentRosterIDs.Add(shownRoster[i].simulatedId);
+                newShownRoster.Add(shownRoster[i]);
+                shownRosterSprites[count] = shownRosterSprites[i];
                 count++;
             } else
             {
-                Debug.Log("ID no longer meets constraints: " + roster[i].simulatedId);
-                currentRosterIDs.Remove(roster[i].simulatedId);
+                currentRosterIDs.Remove(shownRoster[i].simulatedId);
             }
         }
 
-        Debug.Log("INTERMEDIATE SIZE " + currentRosterIDs.Count);
-        roster = newShownRoster;
+        shownRoster = newShownRoster;
         for (int i = count; i < size; i++)
         {
             int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
-            Debug.Log("sim id " + simId);
 
-            roster.Add(new Character(i, simId));
-            Debug.Log("added to " + i);
+            shownRoster.Add(new Character(i, simId));
 
-            rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
-            Debug.Log("rostersprites " + i);
+            shownRosterSprites[i] = CharSpriteGen.genSpriteFromLayers(shownRoster[i]);
             currentRosterIDs.Add(simId);
-            Debug.Log("added final " + i);
         }
 
         UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
     }
 
+    /// <summary>
+    /// Apply new constraints to the constraints list
+    /// </summary>
     public void applyConstraints(RosterConstraints constraints)
     {
         // The roster size will decrease when applying a new constraint (and vice versa)
@@ -191,6 +187,9 @@ public class Roster
         constrainedResult.Invoke(simulatedCurrentRosterSize);
     }
 
+    /// <summary>
+    /// When a FormButton unconfirms, clear all constraints (quick optimization)
+    /// </summary>
     public void reInitializeVariants(CPD_Type onType, List<string> buttonsAreOff)
     {
         CPD cpd = cpdByType[onType];
@@ -203,9 +202,9 @@ public class Roster
 
     public void DebugLogRoster()
     {
-        for (int i = 0; i < roster.Count; i++)
+        for (int i = 0; i < shownRoster.Count; i++)
         {
-            Debug.Log(roster[i]);
+            Debug.Log(shownRoster[i]);
         }
     }
 
@@ -239,7 +238,7 @@ public class Roster
 
                     CPD currCpd = cpdConstrainables[c];
                     currCPDcategory = Mathf.FloorToInt(simulatedId / simIDtourGuide[c]);
-                    List<CPD_Variant> possibles = currCpd.getPossibleValuesFromCategory(currCpd.categories[currCPDcategory]);
+                    List<CPD_Variant> possibles = currCpd.getPossibleVariantsFromCategory(currCpd.categories[currCPDcategory]);
                     vars.Add(possibles[UnityEngine.Random.Range(0, possibles.Count)]);
 
                     simulatedId -= simIDtourGuide[c] * currCPDcategory;
@@ -293,11 +292,7 @@ public class Roster
                     }
                     if (!takenIDs.Contains(workingID))
                     {
-                        Debug.Log("Random index: " + workingID);
                         return workingID;
-                    } else
-                    {
-                        Debug.Log("Failed to establish random index: " + workingID);
                     }
                 }
             }
@@ -332,12 +327,7 @@ public class Roster
                         newSimIdModifiers.Add(aNewModifier);
                         if (!takenIDs.Contains(aNewIndex))
                         {
-                            Debug.Log("Found a new index successfully (1): " + aNewIndex);
                             return aNewIndex;
-                        }
-                        else
-                        {
-                            Debug.Log("Index already taken (1): " + aNewIndex);
                         }
                     }
                 } 
@@ -348,20 +338,12 @@ public class Roster
                     {
                         for (int l = 0; l < currSimIdModifiers.Count; l++)
                         {
-                            Debug.Log("mod " + mod);
-                            Debug.Log("currsim " + currSimIdModifiers[l]);
-                            Debug.Log("zs" + catZeroes);
                             int aNewModifier = mod + currSimIdModifiers[l];
                             int aNewIndex = aNewModifier + catZeroes;
                             newSimIdModifiers.Add(aNewModifier);
                             if (!takenIDs.Contains(aNewIndex))
                             {
-                                Debug.Log("Found a new index successfully: " + aNewIndex);
                                 return aNewIndex;
-                            }
-                            else
-                            {
-                                Debug.Log("Index already taken: " + aNewIndex);
                             }
                         }
                     }
@@ -466,7 +448,7 @@ public class RosterConstraints
 
         else
         {
-            Debug.LogWarning($"Setting up constraints for {onType}");
+            //Debug.LogWarning($"Setting up constraints for {onType}");
             allCurrentConstraints.Add(onType, new HashSet<string>());
         }
     }

@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+/// <summary>
+/// Handles creation of a Roster.
+/// TODO maybe more to do with "remaking" the roster on subsequent plays.
+/// </summary>
 public class RosterGen : MonoBehaviour
 {
     public int numberOfCharacters;
@@ -13,14 +17,9 @@ public class RosterGen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        roster = new Roster(378);
+        //TODO i don't believe size should be passed in anymore. it should be determined only by constrainable CPDs
+        roster = new Roster();
         //roster.DebugLogRoster();
         rosterCreationDone.Invoke(roster);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

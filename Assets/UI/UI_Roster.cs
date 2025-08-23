@@ -4,8 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// UI Roster: This handles drawing character cards in the roster menu.
+/// </summary>
 public class UI_Roster : MonoBehaviour
 {
+    // How many characters should we display at a time?
     public const int CHARACTERS_TO_SHOW = 20;
 
     public static UI_Roster instance;
@@ -28,25 +32,24 @@ public class UI_Roster : MonoBehaviour
 
         createContainer();
         rosterWindow.gameObject.SetActive(false);
-        RosterGen.rosterCreationDone += setRoster;
         createdCards = new GameObject[CHARACTERS_TO_SHOW];
     }
 
     private void OnEnable()
     {
+        RosterGen.rosterCreationDone += setRoster;
         Roster.constrainedResult += updateRosterCount;
         FormButton.updatedConstraint += handleUpdatedConstraint;
         FormButton.reinitializeConstraints += handleDeconfirmed;
-        //Roster.constrainedResult += regenerateCharCards;
         Roster.rosterReady += rosterFormCreation;
     }
 
     private void OnDisable()
     {
+        RosterGen.rosterCreationDone -= setRoster;
         Roster.constrainedResult -= updateRosterCount;
         FormButton.updatedConstraint -= handleUpdatedConstraint;
         FormButton.reinitializeConstraints -= handleDeconfirmed;
-        //Roster.constrainedResult -= regenerateCharCards;
         Roster.rosterReady -= rosterFormCreation;
     }
 
@@ -62,6 +65,9 @@ public class UI_Roster : MonoBehaviour
         roster = rost;
     }
 
+    /// <summary>
+    /// Show or hide the roster window
+    /// </summary>
     public void toggleRosterWindow()
     {
         bool newVal = !rosterWindow.gameObject.activeInHierarchy;
@@ -75,12 +81,17 @@ public class UI_Roster : MonoBehaviour
         rosterWindow.gameObject.SetActive(newVal);
     }
 
+    /// <summary>
+    /// Change the display at the top of the roster to show a new number
+    /// </summary>
     public void updateRosterCount(int newCount)
     {
-        Debug.Log("Updated roster?");
         suspectsRemaining.text = newCount.ToString() + " Suspects Remaining";
     }
 
+    /// <summary>
+    /// Generate all character cards for the first time
+    /// </summary>
     public void generateAllCharCards()
     {
         int entriesPerRow = 10;
@@ -94,7 +105,7 @@ public class UI_Roster : MonoBehaviour
 
         for (int i = 0; i < CHARACTERS_TO_SHOW; i++)
         {
-            Character c = roster.roster[i];
+            Character c = roster.shownRoster[i];
 
             //instantiate card in correct position
             Image newCard = GameObject.Instantiate(characterCardTemplate);
@@ -104,12 +115,12 @@ public class UI_Roster : MonoBehaviour
                 startingY - Mathf.Floor(i / entriesPerRow) * (cardHeight + cardOffsetH), 0);
             newCard.gameObject.SetActive(true);
 
-            roster.rosterSprites[i].name = i.ToString();
+            roster.shownRosterSprites[i].name = i.ToString();
             // TODO would it be better as a sprite renderer???
-            newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.rosterSprites[i];
+            newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.shownRosterSprites[i];
 
             //set portrait and name
-            newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.roster[i].simulatedId + ")";
+            newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.shownRoster[i].simulatedId + ")";
 
             createdCards[i] = newCard.gameObject;
         }
@@ -124,17 +135,17 @@ public class UI_Roster : MonoBehaviour
             for (int i = 0; i < numPortraits; i++)
             {
                 createdCards[i].SetActive(true);
-                Character c = roster.roster[i];
+                Character c = roster.shownRoster[i];
 
                 //instantiate card in correct position
                 Image newCard = createdCards[i].GetComponent<Image>();
 
-                roster.rosterSprites[i].name = i.ToString();
+                roster.shownRosterSprites[i].name = i.ToString();
                 // TODO would it be better as a sprite renderer???
-                newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.rosterSprites[i];
+                newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.shownRosterSprites[i];
 
                 //set portrait and name
-                newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.roster[i].simulatedId + ")";
+                newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.shownRoster[i].simulatedId + ")";
             }
             for(int i = numPortraits; i < CHARACTERS_TO_SHOW; i++)
             {
@@ -143,14 +154,19 @@ public class UI_Roster : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// When roster is finished defining all CPDs, we create the RosterForm here
+    /// </summary>
     private void rosterFormCreation()
     {
         rosterFormContainer.GetComponent<RosterForm>().enabled = true;
     }
 
+    /// <summary>
+    /// When a new constraint is updated from the roster form, we need to relay it to the Roster object
+    /// </summary>
     private void handleUpdatedConstraint(CPD_Type cpdType, string value, FormButtonState newState)
     {
-        Debug.Log("Updated constraints?");
         switch (newState)
         {
             case FormButtonState.Unknown:
@@ -163,10 +179,13 @@ public class UI_Roster : MonoBehaviour
                 roster.rosterConstraints.onlyConstraint(cpdType, value);
                 break;
         }
-        Debug.Log(roster.rosterConstraints.allCurrentConstraints[cpdType].Count);
+
         roster.redrawRosterVis();
     }
 
+    /// <summary>
+    /// When a roster object is "deconfirmed" we'll reset its constraints list (and then repopulate it with old ones if needed.)
+    /// </summary>
     private void handleDeconfirmed(CPD_Type cpdType, List<string> exclude)
     {
         roster.reInitializeVariants(cpdType, exclude);

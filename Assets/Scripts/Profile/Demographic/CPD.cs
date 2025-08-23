@@ -8,30 +8,39 @@ using UnityEngine;
 /// </summary>
 public abstract class CPD
 {
-    public CPD_Type cpdType;
-    protected string propertiesPath;
-    public bool constrainable;
+    public CPD_Type cpdType;          // Check the enum below.
+    protected string propertiesPath;  // Each CPD has a text file that outlines the data of all its variants - this is the path to it
+    public bool constrainable;        // Whether or not this CPD is constrainable, e.g. sortable, part of the game.
 
     protected float probCounter = 0.0f;
     protected float probX = 0.0f;
 
-    public List<CPD_Variant> variants;
-    public List<string> categories;
-    public Dictionary<string, int> categoryIndices;
-    protected Dictionary<string, List<CPD_Variant>> categoriesToVariants;
+    public List<CPD_Variant> variants;                // All variants for this CPD in the order they apepared
+    public List<string> categories;                   // All categories for this CPD in the order they appeared
+    public Dictionary<string, int> categoryIndices;   // All categories matched up with their position in cats list (faster than FindIndex)
+    protected Dictionary<string, List<CPD_Variant>> categoriesToVariants;  // All variants associated with a particular category
 
     public abstract List<CPD_Variant> initialize();
 
+    /// <summary>
+    /// Returns a completely random CPD variant
+    /// </summary>
     public CPD_Variant getRandom()
     {
         return variants[Random.Range(0, variants.Count)];
     }
 
+    /// <summary>
+    /// Returns a completely random CPD variant index
+    /// </summary>
     public int getRandomIndex()
     {
         return Random.Range(0, variants.Count);
     }
 
+    /// <summary>
+    /// Return a random variant with respect to constrained categories
+    /// </summary>
     public CPD_Variant getRandomConstrained(HashSet<string> restrictedCats)
     {
         List<CPD_Variant> allPossible = new List<CPD_Variant>();
@@ -46,12 +55,18 @@ public abstract class CPD
         else return allPossible[Random.Range(0, allPossible.Count)];
     }
 
+    /// <summary>
+    /// Return a random variant index with respect to constrained categories
+    /// </summary>
     public (int catId, int varId) getRandomConstrainedIndex(HashSet<string> restrictedCats)
     {
         CPD_Variant chosen = getRandomConstrained(restrictedCats);
         return (categoryIndices[chosen.category], chosen.cpdID);
     }
 
+    /// <summary>
+    /// Get all possible category indicies with respect to whichever categories are constrained
+    /// </summary>
     public List<int> getAllConstrainedIndicies(HashSet<string> restrictedCats)
     {
         List<int> cats = new List<int>();
@@ -65,13 +80,17 @@ public abstract class CPD
         return cats;
     }
 
-    // For a single constraint
-    public List<CPD_Variant> getPossibleValuesFromCategory(string cat)
+    /// <summary>
+    /// Get all possible variants from a category
+    /// </summary>
+    public List<CPD_Variant> getPossibleVariantsFromCategory(string cat)
     {
         return categoriesToVariants[cat];
     }
 
-    // For a single constraint
+    /// <summary>
+    /// Get all variants from whatever categories are possible (given a set of constraints)
+    /// </summary>
     public List<CPD_Variant> getConstrainedCategoryVariants(HashSet<string> restrictedCats)
     {
         List<CPD_Variant> allPossible = new List<CPD_Variant>();
@@ -79,34 +98,18 @@ public abstract class CPD
         {
             if(!restrictedCats.Contains(cat))
             {
-                allPossible.AddRange(getPossibleValuesFromCategory(cat));
+                allPossible.AddRange(getPossibleVariantsFromCategory(cat));
             }
         }
         return allPossible;
     }
 
+    /// <summary>
+    /// What percentage of categories are still available? (Used for fast roster size recalculations)
+    /// </summary>
     public float getProportionOfCategories(HashSet<string> restrictedCats)
     {
-        int count = 0;
-        foreach (string cat in categories)
-        {
-            if (!restrictedCats.Contains(cat))
-            {
-                count++;
-            }
-        }
-        return ((float)count / (float)categories.Count);
-    }
-
-    // For multiple constraints
-    public List<CPD_Variant> getPossibleValuesFromCategory(IEnumerable categories)
-    {
-        List<CPD_Variant> temp2d = new List<CPD_Variant>();
-        foreach (string cat in categories)
-        {
-            temp2d.AddRange(categoriesToVariants[cat]);
-        }
-        return temp2d;
+        return ((float)(categories.Count - restrictedCats.Count) / (float)categories.Count);
     }
 }
 
@@ -125,7 +128,9 @@ public enum CPD_Type
 }
 
 
-// A CPD where critical values are loaded from a file
+/// <summary>
+/// A CPD whose critical value is a path to some file to load.
+/// </summary>
 public class CPD_FilePath : CPD
 {
     private string spritesPath;
@@ -216,6 +221,9 @@ public class CPD_FilePath : CPD
     }
 }
 
+/// <summary>
+/// A CPD whose critical value is a color
+/// </summary>
 public class CPD_Color : CPD
 {
     // Given the path of this CPD's properties file and where its sprites are stored, we can initialize all variants.

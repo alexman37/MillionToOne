@@ -2,12 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// RosterForm is the controller for the "sorting menu" the player uses to narrow down the roster to their target.
+/// </summary>
 public class RosterForm : MonoBehaviour
 {
     public static RosterForm instance;
 
-    public GameObject formButtonGroupTemplate;
-    CPD[] formFields;
+    [SerializeField] GameObject formButtonGroupTemplate; // use this prefab to create formField groups.
+    CPD[] formFields; // the list of form fields. There should be one for each CONSTRAINABLE CPD.
+                        // (other CPDs can exist and be irrelevant in terms of sorting - such as face.)
 
     private float nextFormGroupOffset = 0;
 
@@ -17,11 +21,15 @@ public class RosterForm : MonoBehaviour
         if (instance == null) instance = this;
         else Destroy(gameObject);
 
+        // Since this depends on the roster being created first, we actually want to instantiate a RosterForm object
+        // within Roster, once we know it's at least finished gathering all the CPD lists together.
         formFields = Roster.cpdConstrainables.ToArray();
         createFormButtonGroups();
     }
 
-    // Constant function...
+    /// <summary>
+    /// For each constrainable CPD, build the sorting menu.
+    /// </summary>
     public void createFormButtonGroups()
     {
         foreach(CPD cpd in formFields)
@@ -30,6 +38,9 @@ public class RosterForm : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Build the sorting menu for a single CPD
+    /// </summary>
     private void createWithParameters(CPD_Type cpdType, List<string> cpdCategories)
     {
         GameObject next = GameObject.Instantiate(formButtonGroupTemplate, this.transform);
@@ -37,6 +48,7 @@ public class RosterForm : MonoBehaviour
 
         FormButtonGroup formGroup = next.GetComponent<FormButtonGroup>();
 
+        // Offset every form field grouping by a constant amount of pixels
         nextFormGroupOffset += formGroup.buildFormButtonGroup(cpdType, cpdCategories, -nextFormGroupOffset) + 10;
     }
 }

@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// A FormButtonGroup is created for each constrainable CPD in the game.
+/// It's made up of FormButtons which all need to communicate with each other in some situations.
+/// </summary>
 public class FormButtonGroup : MonoBehaviour
 {
     public CPD_Type cpdType;

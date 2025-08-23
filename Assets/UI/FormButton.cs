@@ -5,11 +5,19 @@ using System;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// A FormButton is created for each category of a single CPD.
+/// The FormButton has a "yes" button for guessing that the target has this category, and we want to use only it.
+/// It also has a "no" button for ruling out this category completely.
+/// There are 3 general states for a form button to be in: Eliminated (Ruled out), Confirmed, or Unknown.
+/// </summary>
 public class FormButton : MonoBehaviour
 {
     FormButtonState state;
-    public CPD_Type cpdType;
-    public string category;
+    public CPD_Type cpdType; // which CPD is this Formbutton acting on?
+    public string category; // which category is this FormButton tracking for the given CPD?
+
+    // TODO replace with fancier sprites
     Image img1;
     Image img2;
 
@@ -38,6 +46,9 @@ public class FormButton : MonoBehaviour
         updatedConstraint += (_,__,f) => { };
     }
 
+    /// <summary>
+    /// When hit YES button, you may either confirm or unconfirm it
+    /// </summary>
     public void toggleYesButton()
     {
         if (acceptingInput)
@@ -65,9 +76,12 @@ public class FormButton : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// When hit no button, you may either eliminate it or make it a possibility again
+    /// </summary>
     public void toggleNoButton()
     {
-        if(acceptingInput)
+        if(acceptingInput && !yesTicked)
         {
             noTicked = !noTicked;
             if (noTicked && state != FormButtonState.Confirmed)
@@ -83,6 +97,9 @@ public class FormButton : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Given the new state of the FormButton, how should we draw it?
+    /// </summary>
     private void updateConstraintForButton()
     {
         // Adjust draws
@@ -104,12 +121,13 @@ public class FormButton : MonoBehaviour
     }
 
     /// <summary>
-    /// Make sure every other button is either set to NO or 
+    /// When we confirm a particular category we have to "soft disable" all the other categories.
+    /// However we do keep track of whichever ones we'd definitely ruled out before.
+    /// That way, if we unconfirm this category, our old eliminations are still in place.
     /// </summary>
     private void buttonInGroupConfirmed(bool wasConfirmed)
     {
         List<FormButton> buttonsToToggle = partOfGroup.formButtons;
-        Debug.Log("There are " + partOfGroup.formButtons.Count + " buttons in this group");
         List<string> buttonsAreOff = new List<string>();
 
         foreach(FormButton b in buttonsToToggle)
