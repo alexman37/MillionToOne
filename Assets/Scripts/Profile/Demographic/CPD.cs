@@ -17,7 +17,7 @@ public abstract class CPD
 
     public List<CPD_Variant> variants;
     public List<string> categories;
-    protected Dictionary<string, int> categoryIndices;
+    public Dictionary<string, int> categoryIndices;
     protected Dictionary<string, List<CPD_Variant>> categoriesToVariants;
 
     public abstract List<CPD_Variant> initialize();
@@ -50,6 +50,19 @@ public abstract class CPD
     {
         CPD_Variant chosen = getRandomConstrained(restrictedCats);
         return (categoryIndices[chosen.category], chosen.cpdID);
+    }
+
+    public List<int> getAllConstrainedIndicies(HashSet<string> restrictedCats)
+    {
+        List<int> cats = new List<int>();
+        foreach(string cat in categories)
+        {
+            if(!restrictedCats.Contains(cat))
+            {
+                cats.Add(categoryIndices[cat]);
+            }
+        }
+        return cats;
     }
 
     // For a single constraint

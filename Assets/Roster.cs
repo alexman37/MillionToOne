@@ -12,7 +12,8 @@ public class Roster
     private int rosterSeedOffset;
 
     public List<Character> roster; // real characters that actually exist because we had to generate them at some point.
-    public List<Sprite> rosterSprites; //consistent list of the portrait per each character
+    public List<Sprite> rosterSprites; // the sprites of the currently shown characters (for fast access).
+    public HashSet<int> currentRosterIDs; // the simulated IDs of all characters we are currently showing.
 
     public RosterConstraints rosterConstraints;
 
@@ -46,6 +47,7 @@ public class Roster
             cpdConstrainables = new List<CPD>();
             cpdCounts = new List<int>();
             simIDtourGuide = new List<int>();
+            currentRosterIDs = new HashSet<int>();
             // Set constrainables list
             for (int c = 0; c < cpdInstances.Count; c++)
             {
@@ -108,12 +110,13 @@ public class Roster
         // TODO REMOVE
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints);
+            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
             roster.Add(new Character(i, simId));
 
             //Debug.Log("roster gen " + roster[i]);
             rosterSprites.Add(CharSpriteGen.genSpriteFromLayers(roster[i]));
+            currentRosterIDs.Add(simId);
         }
 
         rosterReady.Invoke();
@@ -123,19 +126,38 @@ public class Roster
 
     public void redrawRosterVis()
     {
+        Debug.Log("redraw roster vis");
         // TODO do this in a separate step.
         applyConstraints(rosterConstraints);
+        List<Character> newShownRoster = new List<Character>();
+        int size = Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, simulatedCurrentRosterSize);
 
-        // Characters to show
-        for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
+        // Characters to show: first, choose any from the currently shown roster we'd like to keep.
+        int count = 0;
+        for (int i = 0; i < UI_Roster.CHARACTERS_TO_SHOW && count < size; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints);
+            if (SimulatedID.idMeetsConstraints(roster[i].simulatedId, rosterConstraints))
+            {
+                Debug.Log("ID still meets constraints: " + i);
+                newShownRoster.Add(roster[i]);
+                rosterSprites[count] = rosterSprites[i];
+                count++;
+            } else
+            {
+                Debug.Log("ID no longer meets constraints: " + i);
+                currentRosterIDs.Remove(roster[i].simulatedId);
+            }
+        }
+
+        roster = newShownRoster;
+        for (int i = count; i < size; i++)
+        {
+            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
             roster.Add(new Character(i, simId));
 
-            roster[i].randomizeDemographics();
-
             rosterSprites[i] = CharSpriteGen.genSpriteFromLayers(roster[i]);
+            currentRosterIDs.Add(simId);
         }
 
         UI_Roster.instance.regenerateCharCards(simulatedCurrentRosterSize);
@@ -151,14 +173,6 @@ public class Roster
         foreach (CPD_Type tp in types)
         {
             // Assuming all probabilities are equal.
-            /*List<CPD_Variant> variants = cpdByType[tp].getConstrainedCategoryVariants(constraints.allCurrentConstraints[tp]);
-
-            float accumulatedProbability = 0;
-
-            foreach (CPD_Variant var in variants)
-            {
-                accumulatedProbability += var.probability;
-            }*/
             newRosterSize = Mathf.RoundToInt(cpdByType[tp].getProportionOfCategories(constraints.allCurrentConstraints[tp]) * (float)newRosterSize);
         }
         simulatedCurrentRosterSize = newRosterSize;
@@ -240,26 +254,138 @@ public class Roster
         /// </summary>
         /// <param name="constraints"></param>
         /// <returns></returns>
-        public static int getRandomSimulatedID(RosterConstraints constraints)
+        public static int getRandomSimulatedID(RosterConstraints constraints, HashSet<int> takenIDs, int currentRosterSize)
         {
-            int workingID = 0;
-            for (int c = 0; c < cpdConstrainables.Count; c++)
+            // How this works on a technical level:
+            //   - We will attempt to generate a random ID, see if it's already taken (for big current rosters, this is unlikely.)
+            //   - If it is taken, we'll try the same process again a few more times.
+            //   - If we have failed multiple times, we assume the constrained list is too crowded,
+            //          so we resort to iterating through all possible constrained IDs; in order, until finding one that works.
+            //   - Optimization: if the roster size is below a certain threshold, automatically resort to iterating through all IDs.
+            if(currentRosterSize > 20)
             {
-                CPD currCpd = cpdConstrainables[c];
+                for (int attempt = 0; attempt < 5; attempt++)
+                {
+                    int workingID = 0;
+                    for (int c = 0; c < cpdConstrainables.Count; c++)
+                    {
+                        CPD currCpd = cpdConstrainables[c];
 
-                // If being constrained, carefully consider which values are allowed...
-                if (constraints.allCurrentConstraints.ContainsKey(currCpd.cpdType))
-                {
-                    (int catId, int varId) = currCpd.getRandomConstrainedIndex(constraints.allCurrentConstraints[currCpd.cpdType]);
-                    workingID += simIDtourGuide[c] * catId;
-                }
-                // Otherwise you can just pick anything...
-                else
-                {
-                    workingID += simIDtourGuide[c] * currCpd.getRandomIndex();
+                        // If being constrained, carefully consider which values are allowed...
+                        if (constraints.allCurrentConstraints.ContainsKey(currCpd.cpdType))
+                        {
+                            (int catId, int varId) = currCpd.getRandomConstrainedIndex(constraints.allCurrentConstraints[currCpd.cpdType]);
+                            workingID += simIDtourGuide[c] * catId;
+                        }
+                        // Otherwise you can just pick anything...
+                        else
+                        {
+                            workingID += simIDtourGuide[c] * currCpd.getRandomIndex();
+                        }
+                    }
+                    if (!takenIDs.Contains(workingID))
+                    {
+                        Debug.Log("Random index: " + workingID);
+                        return workingID;
+                    } else
+                    {
+                        Debug.Log("Failed to establish random index: " + workingID);
+                    }
                 }
             }
-            return workingID;
+
+            // Worst case scenario: Resort to iteration through all possible IDs. Return the first success.
+            HashSet<int> allSimIdModifiers = new HashSet<int>();
+            for(int cpdIndex = 0; cpdIndex < cpdConstrainables.Count; cpdIndex++)
+            {
+                CPD currCpd = cpdConstrainables[cpdIndex];
+
+                int magicNumber = simIDtourGuide[cpdIndex];
+                List<int> currSimIdModifiers = currCpd.getAllConstrainedIndicies(constraints.allCurrentConstraints[currCpd.cpdType]);
+                for(int i = 0; i < currSimIdModifiers.Count; i++)
+                {
+                    currSimIdModifiers[i] = magicNumber * currSimIdModifiers[i];
+                }
+                int catZeroes = 0;
+                for(int i = cpdIndex + 1; i < cpdConstrainables.Count; i++)
+                {
+                    // There must be at least one category or there's a problem...
+                    catZeroes += simIDtourGuide[i] * cpdConstrainables[i].getAllConstrainedIndicies(constraints.allCurrentConstraints[currCpd.cpdType])[0];
+                }
+
+                HashSet<int> newSimIdModifiers = new HashSet<int>();
+                // First pass
+                if (allSimIdModifiers.Count == 0)
+                {
+                    for (int l = 0; l < currSimIdModifiers.Count; l++)
+                    {
+                        int aNewIndex = currSimIdModifiers[l] + catZeroes;
+                        newSimIdModifiers.Add(aNewIndex);
+                        if (!takenIDs.Contains(aNewIndex))
+                        {
+                            Debug.Log("Found a new index successfully: " + aNewIndex);
+                            return aNewIndex;
+                        }
+                        else
+                        {
+                            Debug.Log("Index already taken: " + aNewIndex);
+                        }
+                    }
+                } 
+                // Every subsequent pass
+                else
+                {
+                    foreach (int mod in allSimIdModifiers)
+                    {
+                        for (int l = 0; l < currSimIdModifiers.Count; l++)
+                        {
+                            int aNewIndex = mod + currSimIdModifiers[l] + catZeroes;
+                            newSimIdModifiers.Add(aNewIndex);
+                            if (!takenIDs.Contains(aNewIndex))
+                            {
+                                Debug.Log("Found a new index successfully: " + aNewIndex);
+                                return aNewIndex;
+                            }
+                            else
+                            {
+                                Debug.Log("Index already taken: " + aNewIndex);
+                            }
+                        }
+                    }
+                }
+
+                allSimIdModifiers = newSimIdModifiers;
+            }
+
+            // Should be impossible
+            Debug.LogError("Could not find any valid simulated ID");
+            return -1;
+        }
+
+        /// <summary>
+        /// Returns whether or not this ID is valid given a set of constraints
+        /// </summary>
+        /// <param name="simulatedId"></param>
+        /// <param name="constraints"></param>
+        /// <returns></returns>
+        public static bool idMeetsConstraints(int simulatedId, RosterConstraints constraints)
+        {
+            for (int iter = 0; iter < cpdConstrainables.Count; iter++)
+            {
+                int currCPDcategory = 0;
+
+                CPD currCpd = cpdConstrainables[iter];
+                currCPDcategory = Mathf.FloorToInt(simulatedId / simIDtourGuide[iter]);
+                if(constraints.allCurrentConstraints[currCpd.cpdType].Contains(currCpd.categories[currCPDcategory]))
+                {
+                    return false;
+                } else
+                {
+                    simulatedId -= simIDtourGuide[iter] * currCPDcategory;
+                }
+            }
+
+            return true;
         }
     }
 }

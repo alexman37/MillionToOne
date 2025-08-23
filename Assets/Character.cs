@@ -6,8 +6,8 @@ using UnityEngine;
 public class Character
 {
     //Demographics
-    int rosterId; // Where in the roster list of known characters (and sprites) this person is.
-    int simulatedId; // The unique ID from (0 - rosterSize - 1) that contains all this character's constrainable CPD values
+    public int rosterId; // Where in the roster list of known characters (and sprites) this person is.
+    public int simulatedId; // The unique ID from (0 - rosterSize - 1) that contains all this character's constrainable CPD values
                      // All other (cosmetic) random values generated using this simulatedId as a seed
     Dictionary<CPD_Type, CPD_Variant> createdCharacteristics; // Once we create a character we can assign them data in here
 
