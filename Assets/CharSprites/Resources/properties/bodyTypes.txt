@@ -1,0 +1,5 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+shirt1color;1 Color Shirt;X;Shirt
+suit1;Suit 1;X;Suit
+suit2;Suit 2;X;Suit

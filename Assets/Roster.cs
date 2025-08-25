@@ -52,12 +52,12 @@ public class Roster
         {
             cpdInstances = new List<CPD>
             {
-                new CPD_FilePath(CPD_Type.HairStyle, true, "hairStylesTxt", "CharSprites/Hair/"),
-                new CPD_Color(CPD_Type.HairColor, true, "hairTonesTxt"),
-                new CPD_Color(CPD_Type.SkinTone, true, "skinTonesTxt"),
-                new CPD_FilePath(CPD_Type.BodyType, true, "bodyTypesTxt", "CharSprites/Body/"),
-                new CPD_FilePath(CPD_Type.Face, false, "faceTypesTxt", "CharSprites/Face/"),
-                new CPD_FilePath(CPD_Type.HeadType, false, "headTypesTxt", "CharSprites/Head/"),
+                new CPD_FilePath(CPD_Type.HairStyle, true, "properties/hairStyles", "CharSprites64/Hair/"),
+                new CPD_Color(CPD_Type.HairColor, true, "properties/hairTones"),
+                new CPD_Color(CPD_Type.SkinTone, true, "properties/skinTones"),
+                new CPD_FilePath(CPD_Type.BodyType, true, "properties/bodyTypes", "CharSprites64/Body/"),
+                new CPD_FilePath(CPD_Type.Face, false, "properties/faceTypes", "CharSprites64/Face/"),
+                new CPD_FilePath(CPD_Type.HeadType, false, "properties/headTypes", "CharSprites64/Head/"),
             };
             cpdConstrainables = new List<CPD>();
             cpdCounts = new List<int>();

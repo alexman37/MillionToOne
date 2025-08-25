@@ -8,6 +8,11 @@ using UnityEngine.UI;
 /// </summary>
 public static class CharSpriteGen
 {
+    private static Color skinColorBorder = new Color(0.6f, 0, 0, 1);
+    private static Color hairColorBorder = new Color(0, 0, 0.6f, 1);
+    private static Color hairColorShaded = new Color(0, 0, 0.2f, 1);
+    private static Color bodyColorBorder = new Color(0, 0.6f, 0, 1);
+
 
     /// <summary>
     /// Given a character, draw their portrait.
@@ -17,27 +22,29 @@ public static class CharSpriteGen
     public static Sprite genSpriteFromLayers(Character ch)
     {
         //SpriteGenLayer clean = new SpriteGenLayer(ch.background.getSprite(), Color.green, ch.skinTone.color);
+        List<Color> bodyColsReplace = getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone));
+        bodyColsReplace.AddRange(getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
         SpriteGenLayer body = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.BodyType, ch.getCpdIDofCharacteristic(CPD_Type.BodyType)),
-            Color.green,
-            getColorOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
+            new List<Color> { Color.green, bodyColorBorder, Color.red, skinColorBorder },
+            bodyColsReplace);
         SpriteGenLayer head = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HeadType, ch.getCpdIDofCharacteristic(CPD_Type.HeadType)),
-            Color.red,
-            getColorOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
+            new List<Color> { Color.red, skinColorBorder },
+            getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
         SpriteGenLayer hair = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HairStyle, ch.getCpdIDofCharacteristic(CPD_Type.HairStyle)),
-            Color.blue,
-            getColorOfCPD(CPD_Type.HairColor, ch.getCpdIDofCharacteristic(CPD_Type.HairColor)));
+            new List<Color> { Color.blue, hairColorBorder },
+            getColorsOfCPD(CPD_Type.HairColor, ch.getCpdIDofCharacteristic(CPD_Type.HairColor)));
         SpriteGenLayer face = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)));
 
         SpriteGenLayer[] newLayers = { body, head, hair, face };
 
-        Texture2D newTex = new Texture2D(32, 32);
+        Texture2D newTex = new Texture2D(64, 64);
         newTex = addLayers(newTex, newLayers);
         newTex.filterMode = FilterMode.Point;
-        return Sprite.Create(newTex, new Rect(0, 0, 32, 32), new Vector2(0f, 0f), 2);
+        return Sprite.Create(newTex, new Rect(0, 0, 64, 64), new Vector2(0f, 0f), 2);
     }
 
     /// <summary>
@@ -59,6 +66,7 @@ public static class CharSpriteGen
     /// </summary>
     public static Texture2D addLayer(Texture2D oldLayer, SpriteGenLayer sgl)
     {
+        Debug.Log(sgl);
         int w = sgl.layer.texture.width;
         int h = sgl.layer.texture.height;
         for (int x = 0; x < oldLayer.width; x++)
@@ -66,6 +74,7 @@ public static class CharSpriteGen
             for (int y = 0; y < oldLayer.height; y++)
             {
                 Color newcol = sgl.layer.texture.GetPixel(x, y);
+                if (x == 3 && y == 36) Debug.Log("Col is " + newcol);
                 if (newcol.a == 0 || x >= w || y >= h) ;//do nothing;
                 // TODO do we wanna handle slight transparency here?
                 else
@@ -98,6 +107,19 @@ public static class CharSpriteGen
     private static Color getColorOfCPD(CPD_Type cpdT, int varIndex)
     {
         return (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col;
+    }
+
+    /// <summary>
+    /// Get Colors for CPD variant in this order: normal, border, shaded
+    /// </summary>
+    private static List<Color> getColorsOfCPD(CPD_Type cpdT, int varIndex)
+    {
+        Color workWith = (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col;
+        return new List<Color> {
+            workWith,
+            new Color(workWith.r * 0.6f, workWith.g * 0.6f, workWith.b * 0.6f, workWith.a),
+            //new Color(workWith.r * 0.2f, workWith.g * 0.2f, workWith.b * 0.2f, workWith.a),
+        };
     }
 }
 

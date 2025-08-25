@@ -1,0 +1,9 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+confused;Confused;X;Confused
+confused-2;Confused2;X;Confused
+happy;Happy;X;Happy
+normal;Normal;X;Normal
+normal2;Normal2;X;Normal2
+pouty;Pouty;X;Pouty
+worried;Worried;X;Worried

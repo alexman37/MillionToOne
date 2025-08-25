@@ -1,0 +1,40 @@
+###[int id], string filename, string name, float probability, string generalDescription(s)
+
+male/afro-big;Afro Big;X;Long
+male/afro-small;Afro Small;X;Normal
+male/baker;Baker;X;Normal
+male/balding;Balding;X;Short
+male/beret;Beret;X;Normal
+male/blob;Blob;X;Normal
+male/bucket;Bucket;X;Normal
+male/doc;Doc;X;Normal
+male/dorky;Dorky;X;Normal
+male/double-spiked;Double Spiked;X;Normal
+male/elvis;Elvis;X;Normal
+male/fancy-twopart;Fancy Two Part;X;Normal
+male/flicked;Flicked;X;Normal
+male/fold-left;Fold Left;X;Normal
+male/fold-right;Fold Right;X;Normal
+male/frizzled;Frizzled;X;Long
+male/goku;Goku;X;Long
+male/kpop;Kpop;X;Normal
+male/lightning;Lightning;X;Normal
+male/likeahat;Like A Hat;X;Short
+male/matted;Matted;X;Normal
+male/middle-piece;Middle Piece;X;Normal
+male/mohawk;Mohawk;X;Short
+male/one-sided-flick;One Sided Flick;X;Normal
+male/round-top;Round Top;X;Normal
+male/royalty;Royalty;X;Normal
+male/semicircle;Semicircle;X;Normal
+male/slimy;Slimy;X;Normal
+male/sloppy;Sloppy;X;Normal
+male/small-twirl;Small Twirl;X;Long
+male/soft-mohawk;Soft Mohawk;X;Short
+male/spiky-sloppy;Spiky Sloppy;X;Long
+male/squilliam-rain;Squilliam Rain;X;Normal
+male/squilliam;Squilliam;X;Normal
+male/toupee;Toupee;X;Normal
+male/triple-spiked;Triple Spiked;X;Normal
+male/two-part;Two Part;X;Normal
+male/very-spiky;Very Spiky;X;Long

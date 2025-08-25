@@ -7,10 +7,13 @@ Shader "Custom/ColorSwap"
 
 		_SkinColor("SkinColor", Color) = (1,1,1,1)
 		_NewSkinColor("NewSkinColor", Color) = (1,1,1,1)
+		_SkinColorBorder("SkinColorBorder", Color) = (1,1,1,1)
 		_HairColor("HairColor", Color) = (1,1,1,1)
 		_NewHairColor("NewHairColor", Color) = (1,1,1,1)
+		_HairColorBorder("HairColorBorder", Color) = (1,1,1,1)
 		_BodyColor("BodyColor", Color) = (1,1,1,1)
 		_NewBodyColor("NewBodyColor", Color) = (1,1,1,1)
+		_BodyColorBorder("BodyColorBorder", Color) = (1,1,1,1)
 	}
 
 	SubShader
@@ -42,6 +45,7 @@ Shader "Custom/ColorSwap"
 			float4 _MainTex_ST;
 			float4 _SkinColor;
 			float4 _NewSkinColor;
+			float4 _SkinColorBorder;
 			float4 _HairColor;
 			float4 _NewHairColor;
 			float4 _BodyColor;
@@ -67,6 +71,11 @@ Shader "Custom/ColorSwap"
 				if(length(col - _SkinColor) < _Tolerance)
 				{
 					return half4(_NewSkinColor.rgb, col.a);
+				}
+
+				if(length(col - _SkinColorBorder) < _Tolerance)
+				{
+					return half4(_NewSkinColor.r * 0.6, _NewSkinColor.g * 0.6, _NewSkinColor.b * 0.6, col.a);
 				}
 
 				if(length(col - _HairColor) < _Tolerance)
