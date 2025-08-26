@@ -16,7 +16,7 @@ public class SpriteMergeTest : MonoBehaviour
     void Start()
     {
         
-        var newTex = new Texture2D(img.sprite.texture.width, img.sprite.texture.height);
+        /*var newTex = new Texture2D(img.sprite.texture.width, img.sprite.texture.height);
         Sprite[] layersInOrder = { cleanslate, body, head, hair, face };
 
         //Texture2D result = addLayers(img.sprite.texture, layersInOrder);
@@ -26,7 +26,7 @@ public class SpriteMergeTest : MonoBehaviour
         result = CharSpriteGen.addLayer(result, new SpriteGenLayer(hair, oneList(Color.blue), oneList(Color.white)));
         result = CharSpriteGen.addLayer(result, new SpriteGenLayer(face));
         Sprite fin = Sprite.Create(result, new Rect(0, 0, 32, 32), new Vector2(0f, 0f));
-        img.sprite = fin;
+        img.sprite = fin;*/
         Debug.Log("test complete");
     }
 

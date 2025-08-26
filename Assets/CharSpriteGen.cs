@@ -8,9 +8,14 @@ using UnityEngine.UI;
 /// </summary>
 public static class CharSpriteGen
 {
+    public delegate Color ReplacementFunc(Color prior, Color observed, Color[] target);
+
+    private static Color skinColor = new Color(1, 0, 0, 1);
     private static Color skinColorBorder = new Color(0.6f, 0, 0, 1);
+    private static Color hairColor = new Color(0, 0, 1, 1);
     private static Color hairColorBorder = new Color(0, 0, 0.6f, 1);
     private static Color hairColorShaded = new Color(0, 0, 0.2f, 1);
+    private static Color bodyColor = new Color(0, 1, 0, 1);
     private static Color bodyColorBorder = new Color(0, 0.6f, 0, 1);
 
 
@@ -26,23 +31,26 @@ public static class CharSpriteGen
         bodyColsReplace.AddRange(getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
         SpriteGenLayer body = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.BodyType, ch.getCpdIDofCharacteristic(CPD_Type.BodyType)),
-            new List<Color> { Color.green, bodyColorBorder, Color.red, skinColorBorder },
-            bodyColsReplace);
+            bodyReplacement);
         SpriteGenLayer head = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HeadType, ch.getCpdIDofCharacteristic(CPD_Type.HeadType)),
-            new List<Color> { Color.red, skinColorBorder },
-            getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
+            headReplacement);
         SpriteGenLayer hair = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HairStyle, ch.getCpdIDofCharacteristic(CPD_Type.HairStyle)),
-            new List<Color> { Color.blue, hairColorBorder },
-            getColorsOfCPD(CPD_Type.HairColor, ch.getCpdIDofCharacteristic(CPD_Type.HairColor)));
+            hairReplacement);
         SpriteGenLayer face = new SpriteGenLayer(
-            getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)));
+            getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)), 
+            defaultReplacement);
 
         SpriteGenLayer[] newLayers = { body, head, hair, face };
+        Color[][] cols = { new Color[]{ ch.getColorField(CPD_Type.SkinTone), new Color(Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f)) },
+            new Color[]{ ch.getColorField(CPD_Type.SkinTone) },
+            new Color[]{ ch.getColorField(CPD_Type.HairColor) },
+            new Color[]{ Color.black } };
 
         Texture2D newTex = new Texture2D(64, 64);
-        newTex = addLayers(newTex, newLayers);
+        newTex = prepareCanvas(newTex);
+        newTex = addLayers(newTex, newLayers, cols);
         newTex.filterMode = FilterMode.Point;
         return Sprite.Create(newTex, new Rect(0, 0, 64, 64), new Vector2(0f, 0f), 2);
     }
@@ -50,11 +58,11 @@ public static class CharSpriteGen
     /// <summary>
     /// Add several layers to the given texture
     /// </summary>
-    public static Texture2D addLayers(Texture2D oldLayer, SpriteGenLayer[] newLayers)
+    public static Texture2D addLayers(Texture2D oldLayer, SpriteGenLayer[] newLayers, Color[][] replacements)
     {
         for (int i = 0; i < newLayers.Length; i++)
         {
-            oldLayer = addLayer(oldLayer, newLayers[i]);
+            oldLayer = addLayer(oldLayer, newLayers[i], replacements[i]);
         }
 
         return oldLayer;
@@ -64,7 +72,7 @@ public static class CharSpriteGen
     /// Add a single layer to a given texture
     /// TODO: Do we need to handle slight transparency?
     /// </summary>
-    public static Texture2D addLayer(Texture2D oldLayer, SpriteGenLayer sgl)
+    public static Texture2D addLayer(Texture2D oldLayer, SpriteGenLayer sgl, Color[] target)
     {
         Debug.Log(sgl);
         int w = sgl.layer.texture.width;
@@ -74,17 +82,12 @@ public static class CharSpriteGen
             for (int y = 0; y < oldLayer.height; y++)
             {
                 Color newcol = sgl.layer.texture.GetPixel(x, y);
-                if (x == 3 && y == 36) Debug.Log("Col is " + newcol);
                 if (newcol.a == 0 || x >= w || y >= h) ;//do nothing;
                 // TODO do we wanna handle slight transparency here?
                 else
                 {
-                    if(sgl.colsToFill != null) {
-                        int index = sgl.colsToWatch.IndexOf(newcol);
-                        if (index >= 0) oldLayer.SetPixel(x, y, sgl.colsToFill[index]);
-                        else oldLayer.SetPixel(x, y, newcol);
-                    }
-                    else oldLayer.SetPixel(x, y, newcol);
+                    Color prior = oldLayer.GetPixel(x, y);
+                    oldLayer.SetPixel(x, y, sgl.recolor(prior, newcol, target));
                 }
             }
         }
@@ -121,6 +124,66 @@ public static class CharSpriteGen
             //new Color(workWith.r * 0.2f, workWith.g * 0.2f, workWith.b * 0.2f, workWith.a),
         };
     }
+
+    private static Texture2D prepareCanvas(Texture2D canvas)
+    {
+        for (int x = 0; x < canvas.width; x++)
+        {
+            for (int y = 0; y < canvas.height; y++)
+            {
+                canvas.SetPixel(x, y, Color.clear);
+            }
+        }
+
+        canvas.Apply();
+        return canvas;
+    }
+
+
+
+
+    /// REPLACEMENT FUNCTIONS
+    private static Color defaultReplacement(Color prior, Color observed, Color[] _)
+    {
+        /*Color observed = oldLayer.GetPixel(x, y);
+        oldLayer.SetPixel(x, y, observed);*/
+        return observed;
+    }
+
+    private static Color headReplacement(Color prior, Color observed, Color[] target)
+    {
+        Color targ = target[0];
+        if (observed == skinColor) return targ;
+        else if (observed == skinColorBorder) return new Color(targ.r * 0.6f, targ.g * 0.6f, targ.b * 0.6f);
+        else return observed;
+    }
+
+    private static Color bodyReplacement(Color prior, Color observed, Color[] target)
+    {
+        Color skin = target[0];
+        Color clothes = target[1];
+        if (observed == bodyColor) return clothes;
+        else if (observed == bodyColorBorder) return new Color(clothes.r * 0.6f, clothes.g * 0.6f, clothes.b * 0.6f);
+        if (observed == skinColor) return skin;
+        else if (observed == skinColorBorder) return new Color(skin.r * 0.6f, skin.g * 0.6f, skin.b * 0.6f); // TODO second color
+        else return observed;
+    }
+
+    private static Color hairReplacement(Color prior, Color observed, Color[] target)
+    {
+        Color targ = target[0];
+        if (observed == hairColor) return targ;
+        else if (observed == hairColorBorder) return new Color(targ.r * 0.6f, targ.g * 0.6f, targ.b * 0.6f);
+        else if (observed == hairColorShaded)
+        {
+            if (prior.a == 0)
+            {
+                return new Color(targ.r * 0.2f, targ.g * 0.2f, targ.b * 0.2f);
+            }
+            else return prior;
+        }
+        else return observed;
+    }
 }
 
 
@@ -135,28 +198,12 @@ public static class CharSpriteGen
 /// </summary>
 public class SpriteGenLayer {
     public Sprite layer;
-    public List<Color> colsToWatch;
-    public List<Color> colsToFill;
+    public CharSpriteGen.ReplacementFunc recolor;
 
-    public SpriteGenLayer(Sprite lay, Color colToWatch, Color colToFill)
+    public SpriteGenLayer(Sprite lay, CharSpriteGen.ReplacementFunc rep)
     {
         this.layer = lay;
-        this.colsToWatch = new List<Color> { colToWatch };
-        this.colsToFill = new List<Color> { colToFill };
-    }
-
-    public SpriteGenLayer(Sprite lay, List<Color> colsToWatch, List<Color> colsToFill)
-    {
-        this.layer = lay;
-        this.colsToWatch = colsToWatch;
-        this.colsToFill = colsToFill;
-    }
-
-    public SpriteGenLayer(Sprite lay)
-    {
-        this.layer = lay;
-        this.colsToWatch = null;
-        this.colsToFill = null;
+        this.recolor = rep;
     }
 
     public override string ToString()

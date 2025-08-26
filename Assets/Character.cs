@@ -70,6 +70,22 @@ public class Character
     }
 
     /// <summary>
+    /// Gets the filepath value from a CPD assumed to be a filepath
+    /// </summary>
+    public string getFilePath(CPD_Type cpdType)
+    {
+        return (createdCharacteristics[cpdType].critVal as CPD_CritVal_Filepath).filepath;
+    }
+
+    /// <summary>
+    /// Gets the color value from a CPD assumed to be a color
+    /// </summary>
+    public Color getColorField(CPD_Type cpdType)
+    {
+        return (createdCharacteristics[cpdType].critVal as CPD_CritVal_Color).col;
+    }
+
+    /// <summary>
     /// Character's display name is just their first and last name
     /// </summary>
     public string getDisplayName(bool newline)

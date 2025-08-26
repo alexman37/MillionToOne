@@ -23,7 +23,7 @@ male/likeahat;Like A Hat;X;Short
 male/matted;Matted;X;Normal
 male/middle-piece;Middle Piece;X;Normal
 male/mohawk;Mohawk;X;Short
-male/one-sided-flick;One Sided Flick;X;Normal
+male/one-side-flick;One Sided Flick;X;Normal
 male/round-top;Round Top;X;Normal
 male/royalty;Royalty;X;Normal
 male/semicircle;Semicircle;X;Normal
@@ -38,3 +38,27 @@ male/toupee;Toupee;X;Normal
 male/triple-spiked;Triple Spiked;X;Normal
 male/two-part;Two Part;X;Normal
 male/very-spiky;Very Spiky;X;Long
+
+
+female/cassidy;Cassidy;X;Long
+female/curly;Curly;X;Long
+female/fold-left-long;Fold Left;X;Long
+female/frowy;Frowy;X;Long
+female/hairbun-2;Hairbun2;X;Short
+female/hairbun;Hairbun;X;Short
+female/karen;Karen;X;Short
+female/long-mat;LongMat;X;Long
+female/long-sideburns;LongSideburns;X;Long
+female/long-streams-2;LongStreams2;X;Long
+female/long-streams;LongStreams;X;Long
+female/mop;Mop;X;Short
+female/multi-prong;MultiProng;X;Long
+female/off-to-side;OffToSide;X;Normal
+female/pigtails-1;Pigtails1;X;Normal
+female/pigtails-2;Pigtails2;X;Long
+female/ponytail;Ponytail;X;Normal
+female/puffy;Puffy;X;Short
+female/short-normal;ShortNormal;X;Short
+female/slide;Side;X;Normal
+female/super-karen;Superkaren;X;Short
+female/two-ls;TwoLs;X;Normal
