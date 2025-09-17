@@ -1,3 +1,4 @@
 ###[int id], string filename, string name, float probability, string generalDescription(s)
 
 standard;Standard;X;Standard
+circle;Circle;X;Standard

@@ -10,7 +10,7 @@ using TMPro;
 public class UI_Roster : MonoBehaviour
 {
     // How many characters should we display at a time?
-    public const int CHARACTERS_TO_SHOW = 20;
+    public const int CHARACTERS_TO_SHOW = 16;
 
     public static UI_Roster instance;
 
@@ -94,7 +94,7 @@ public class UI_Roster : MonoBehaviour
     /// </summary>
     public void generateAllCharCards()
     {
-        int entriesPerRow = 10;
+        int entriesPerRow = 8;
         float startingX = characterCardTemplate.rectTransform.position.x;
         float startingY = characterCardTemplate.rectTransform.position.y;
         float cardWidth = characterCardTemplate.rectTransform.rect.width;

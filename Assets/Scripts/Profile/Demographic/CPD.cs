@@ -253,9 +253,31 @@ public class CPD_Color : CPD
                 string[] fields = line.Split(';');
 
                 //color
-                float[] colors = new float[3];
                 string[] strColors = fields[2].Split(',');
-                for (int s = 0; s < strColors.Length; s++)
+                CPD_ColorType critVal;
+
+                // Color range
+                if (fields[2].Contains("-"))
+                {
+                    string[] rs = strColors[0].Split('-');
+                    int rMin = int.Parse(rs[0]); int rMax = rs.Length > 1 ? int.Parse(rs[1]) : int.Parse(rs[0]);
+                    string[] gs = strColors[1].Split('-');
+                    int gMin, gMax;
+                    if (gs[0] == "X0") { gMin = rMin; gMax = rMin; }
+                    else { gMin = int.Parse(gs[0]); gMax = gs.Length > 1 ? int.Parse(gs[1]) : int.Parse(gs[0]); }
+                    string[] bs = strColors[2].Split('-');
+                    int bMin, bMax;
+                    if (bs[0] == "X0") { bMin = rMin; bMax = rMin; }
+                    else if (bs[0] == "X1") { bMin = gMin; bMax = gMin; }
+                    else { bMin = int.Parse(bs[0]); bMax = bs.Length > 1 ? int.Parse(bs[1]) : int.Parse(bs[0]); }
+                    critVal = new ColorRange(rMin, rMax, gMin, gMax, bMin, bMax);
+                } 
+                // Single color value
+                else
+                {
+                    critVal = new ConstantColor(new Color(float.Parse(strColors[0]) / 255f, float.Parse(strColors[1]) / 255f, float.Parse(strColors[2]) / 255f));
+                }
+                /*for (int s = 0; s < strColors.Length; s++)
                 {
                     string curr = strColors[s];
                     if (strColors[s].Contains("-"))
@@ -270,7 +292,7 @@ public class CPD_Color : CPD
                     }
                     else colors[s] = int.Parse(strColors[s]) / 255.0f;
                 }
-                Color col = new Color(colors[0], colors[1], colors[2]);
+                Color col = new Color(colors[0], colors[1], colors[2]);*/
 
                 //probability
                 float p;
@@ -297,7 +319,7 @@ public class CPD_Color : CPD
                     cpdType,
                     categoriesToVariants[cat].Count,
                     variants.Count,
-                    new CPD_CritVal_Color(col),
+                    new CPD_CritVal_Color(critVal),
                     fields[0],
                     cat,
                     p
@@ -394,10 +416,66 @@ public class CPD_CritVal_Filepath : CPD_CriticalValue
 
 public class CPD_CritVal_Color : CPD_CriticalValue
 {
-    public Color col;
+    public CPD_ColorType col;
 
     public CPD_CritVal_Color(Color c)
     {
+        col = new ConstantColor(c);
+    }
+
+    public CPD_CritVal_Color(CPD_ColorType c)
+    {
         col = c;
+    }
+}
+
+public abstract class CPD_ColorType
+{
+    public abstract Color getColor(int simId);
+}
+
+public class ConstantColor : CPD_ColorType
+{
+    private Color col;
+
+    public ConstantColor(Color co)
+    {
+        col = co;
+    }
+    public override Color getColor(int simId)
+    {
+        return col;
+    }
+}
+
+// Color Range
+public class ColorRange : CPD_ColorType
+{
+    // all color values from 0-255 (for now)
+    private int minR;
+    private int maxR;
+    private int minG;
+    private int maxG;
+    private int minB;
+    private int maxB;
+
+    public ColorRange(int minR, int maxR, int minG, int maxG, int minB, int maxB)
+    {
+        this.minR = minR;
+        this.maxR = maxR;
+        this.minG = minG;
+        this.maxG = maxG;
+        this.minB = minB;
+        this.maxB = maxB;
+    }
+
+    public override Color getColor(int simId)
+    {
+        Random.InitState(simId);
+        return new Color(
+            (float)Random.Range(minR, maxR) / 255f,
+            (float)Random.Range(minG, maxG) / 255f,
+            (float)Random.Range(minB, maxB) / 255f,
+        1);
     }
 }

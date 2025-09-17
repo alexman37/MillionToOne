@@ -82,7 +82,7 @@ public class Character
     /// </summary>
     public Color getColorField(CPD_Type cpdType)
     {
-        return (createdCharacteristics[cpdType].critVal as CPD_CritVal_Color).col;
+        return (createdCharacteristics[cpdType].critVal as CPD_CritVal_Color).col.getColor(simulatedId);
     }
 
     /// <summary>

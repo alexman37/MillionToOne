@@ -27,8 +27,8 @@ public static class CharSpriteGen
     public static Sprite genSpriteFromLayers(Character ch)
     {
         //SpriteGenLayer clean = new SpriteGenLayer(ch.background.getSprite(), Color.green, ch.skinTone.color);
-        List<Color> bodyColsReplace = getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone));
-        bodyColsReplace.AddRange(getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone)));
+        List<Color> bodyColsReplace = getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone), ch.simulatedId);
+        bodyColsReplace.AddRange(getColorsOfCPD(CPD_Type.SkinTone, ch.getCpdIDofCharacteristic(CPD_Type.SkinTone), ch.simulatedId));
         SpriteGenLayer body = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.BodyType, ch.getCpdIDofCharacteristic(CPD_Type.BodyType)),
             bodyReplacement);
@@ -43,6 +43,7 @@ public static class CharSpriteGen
             defaultReplacement);
 
         SpriteGenLayer[] newLayers = { body, head, hair, face };
+        // TODO ???
         Color[][] cols = { new Color[]{ ch.getColorField(CPD_Type.SkinTone), new Color(Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f)) },
             new Color[]{ ch.getColorField(CPD_Type.SkinTone) },
             new Color[]{ ch.getColorField(CPD_Type.HairColor) },
@@ -107,17 +108,17 @@ public static class CharSpriteGen
     /// <summary>
     /// Get the color of a CPD variant, assuming it is indeed a Color type variant
     /// </summary>
-    private static Color getColorOfCPD(CPD_Type cpdT, int varIndex)
+    private static Color getColorOfCPD(CPD_Type cpdT, int varIndex, int simId)
     {
-        return (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col;
+        return (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col.getColor(simId);
     }
 
     /// <summary>
     /// Get Colors for CPD variant in this order: normal, border, shaded
     /// </summary>
-    private static List<Color> getColorsOfCPD(CPD_Type cpdT, int varIndex)
+    private static List<Color> getColorsOfCPD(CPD_Type cpdT, int varIndex, int simId)
     {
-        Color workWith = (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col;
+        Color workWith = (Roster.cpdByType[cpdT].variants[varIndex].critVal as CPD_CritVal_Color).col.getColor(simId);
         return new List<Color> {
             workWith,
             new Color(workWith.r * 0.6f, workWith.g * 0.6f, workWith.b * 0.6f, workWith.a),
