@@ -15,6 +15,7 @@ public static class CharSpriteGen
     private static Color hairColor = new Color(0, 0, 1, 1);
     private static Color hairColorBorder = new Color(0, 0, 0.6f, 1);
     private static Color hairColorShaded = new Color(0, 0, 0.2f, 1);
+    private static Color hairColorShadow = new Color(0, 0, 0.4f, 1);
     private static Color bodyColor = new Color(0, 1, 0, 1);
     private static Color bodyColorBorder = new Color(0, 0.6f, 0, 1);
 
@@ -180,6 +181,14 @@ public static class CharSpriteGen
             if (prior.a == 0)
             {
                 return new Color(targ.r * 0.2f, targ.g * 0.2f, targ.b * 0.2f);
+            }
+            else return prior;
+        }
+        else if (observed == hairColorShadow)
+        {
+            if (prior.a > 0)
+            {
+                return new Color(prior.r * 0.75f, prior.g * 0.75f, prior.b * 0.75f);
             }
             else return prior;
         }
