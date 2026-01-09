@@ -10,7 +10,7 @@ using TMPro;
 public class UI_Roster : MonoBehaviour
 {
     // How many characters should we display at a time?
-    public const int CHARACTERS_TO_SHOW = 16;
+    public const int CHARACTERS_TO_SHOW = 20;
 
     public static UI_Roster instance;
 
@@ -56,8 +56,18 @@ public class UI_Roster : MonoBehaviour
         Destroy(container);
 
         container = new GameObject();
-        container.transform.SetParent(transform.parent);
-        container.transform.position = new Vector3(100, 100, 0);
+        container.name = "RosterContainer";
+        container.AddComponent<RectTransform>();
+        RectTransform rt = container.GetComponent<RectTransform>();
+
+        container.transform.SetParent(transform);
+
+        Debug.Log(container.GetComponent<RectTransform>().pivot);
+        rt.pivot = new Vector2(0, 1);
+        rt.anchorMax = new Vector2(0, 1);
+        rt.anchorMin = new Vector2(0, 1);
+        Debug.Log(container.GetComponent<RectTransform>().pivot);
+        rt.anchoredPosition = new Vector2(0, 0);
     }
 
     void setRoster(Roster rost)
@@ -100,9 +110,9 @@ public class UI_Roster : MonoBehaviour
     {
         createContainer();
 
-        int entriesPerRow = 8;
+        int entriesPerRow = 10;
         float startingX = characterCardTemplate.rectTransform.position.x;
-        float startingY = characterCardTemplate.rectTransform.position.y;
+        float startingY = characterCardTemplate.rectTransform.position.y - 100;
         float cardWidth = characterCardTemplate.rectTransform.rect.width;
         float cardHeight = characterCardTemplate.rectTransform.rect.height;
         float cardOffsetW = cardWidth / 10f;
@@ -117,10 +127,11 @@ public class UI_Roster : MonoBehaviour
             //instantiate card in correct position
             Image newCard = GameObject.Instantiate(characterCardTemplate);
             newCard.transform.SetParent(container.transform);
-            newCard.rectTransform.position = new Vector3(
+            newCard.rectTransform.localPosition = new Vector3(
                 startingX + Mathf.Floor(i % entriesPerRow) * (cardWidth + cardOffsetW), 
                 startingY - Mathf.Floor(i / entriesPerRow) * (cardHeight + cardOffsetH), 0);
             newCard.gameObject.SetActive(true);
+            Debug.Log("POS " + newCard.rectTransform.position);
 
             roster.shownRosterSprites[i].name = i.ToString();
             // TODO would it be better as a sprite renderer???
