@@ -30,8 +30,6 @@ public class UI_Roster : MonoBehaviour
         if (instance == null) instance = this;
         else Destroy(gameObject);
 
-        createContainer();
-        rosterWindow.gameObject.SetActive(false);
         createdCards = new GameObject[CHARACTERS_TO_SHOW];
     }
 
@@ -55,14 +53,19 @@ public class UI_Roster : MonoBehaviour
 
     void createContainer()
     {
+        Destroy(container);
+
         container = new GameObject();
-        container.transform.SetParent(transform.parent.parent);
+        container.transform.SetParent(transform.parent);
         container.transform.position = new Vector3(100, 100, 0);
     }
 
     void setRoster(Roster rost)
     {
         roster = rost;
+
+        // assume this also means we want to generate cards
+        generateAllCharCards();
     }
 
     /// <summary>
@@ -75,6 +78,7 @@ public class UI_Roster : MonoBehaviour
         else
         {
             Destroy(container);
+            container = null;
             createContainer();
         }
 
@@ -94,6 +98,8 @@ public class UI_Roster : MonoBehaviour
     /// </summary>
     public void generateAllCharCards()
     {
+        createContainer();
+
         int entriesPerRow = 8;
         float startingX = characterCardTemplate.rectTransform.position.x;
         float startingY = characterCardTemplate.rectTransform.position.y;
@@ -105,6 +111,7 @@ public class UI_Roster : MonoBehaviour
 
         for (int i = 0; i < CHARACTERS_TO_SHOW; i++)
         {
+            Debug.Log(roster.shownRoster.Count);
             Character c = roster.shownRoster[i];
 
             //instantiate card in correct position

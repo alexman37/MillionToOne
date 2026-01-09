@@ -70,6 +70,7 @@ public class Roster
             cpdByType = new Dictionary<CPD_Type, CPD>();
             simIDtourGuide = new List<int>();
             currentRosterIDs = new HashSet<int>();
+
             // Set constrainables list
             for (int c = 0; c < cpdInstances.Count; c++)
             {

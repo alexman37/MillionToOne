@@ -17,9 +17,14 @@ public class RosterGen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Done gen i suppose");
         //TODO i don't believe size should be passed in anymore. it should be determined only by constrainable CPDs
         roster = new Roster();
+        Debug.Log("Done gen i suppose 1");
         //roster.DebugLogRoster();
+        rosterCreationDone += (_) => { };
+
         rosterCreationDone.Invoke(roster);
+        Debug.Log("Done gen i suppose 2");
     }
 }
