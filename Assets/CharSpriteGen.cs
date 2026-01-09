@@ -16,6 +16,7 @@ public static class CharSpriteGen
     private static Color hairColorBorder = new Color(0, 0, 0.6f, 1);
     private static Color hairColorShaded = new Color(0, 0, 0.2f, 1);
     private static Color hairColorShadow = new Color(0, 0, 0.4f, 1);
+    private static Color hairColorShadedOrShadow = new Color(0, 0, 0.8f, 1);
     private static Color bodyColor = new Color(0, 1, 0, 1);
     private static Color bodyColorBorder = new Color(0, 0.6f, 0, 1);
 
@@ -36,19 +37,19 @@ public static class CharSpriteGen
         SpriteGenLayer head = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HeadType, ch.getCpdIDofCharacteristic(CPD_Type.HeadType)),
             headReplacement);
+        SpriteGenLayer face = new SpriteGenLayer(
+            getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)),
+            faceReplacement);
         SpriteGenLayer hair = new SpriteGenLayer(
             getSpriteOfCPD(CPD_Type.HairStyle, ch.getCpdIDofCharacteristic(CPD_Type.HairStyle)),
             hairReplacement);
-        SpriteGenLayer face = new SpriteGenLayer(
-            getSpriteOfCPD(CPD_Type.Face, ch.getCpdIDofCharacteristic(CPD_Type.Face)), 
-            defaultReplacement);
 
-        SpriteGenLayer[] newLayers = { body, head, hair, face };
+        SpriteGenLayer[] newLayers = { body, head, face, hair };
         // TODO ???
         Color[][] cols = { new Color[]{ ch.getColorField(CPD_Type.SkinTone), new Color(Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f), Random.Range(0.1f, 0.5f)) },
             new Color[]{ ch.getColorField(CPD_Type.SkinTone) },
             new Color[]{ ch.getColorField(CPD_Type.HairColor) },
-            new Color[]{ Color.black } };
+            new Color[]{ ch.getColorField(CPD_Type.HairColor) } };
 
         Texture2D newTex = new Texture2D(64, 64);
         newTex = prepareCanvas(newTex);
@@ -160,6 +161,13 @@ public static class CharSpriteGen
         else return observed;
     }
 
+    private static Color faceReplacement(Color prior, Color observed, Color[] target)
+    {
+        Color targ = target[0];
+        if (observed == hairColor) return new Color(targ.r * 0.3f, targ.g * 0.3f, targ.b * 0.3f);
+        else return observed;
+    }
+
     private static Color bodyReplacement(Color prior, Color observed, Color[] target)
     {
         Color skin = target[0];
@@ -191,6 +199,19 @@ public static class CharSpriteGen
                 return new Color(prior.r * 0.75f, prior.g * 0.75f, prior.b * 0.75f);
             }
             else return prior;
+        }
+        else if (observed == hairColorShadedOrShadow)
+        {
+            // Shadow
+            if (prior.a > 0)
+            {
+                return new Color(prior.r * 0.75f, prior.g * 0.75f, prior.b * 0.75f);
+            }
+            // Shaded dark hair background
+            else
+            {
+                return new Color(targ.r * 0.1f, targ.g * 0.1f, targ.b * 0.1f);
+            }
         }
         else return observed;
     }

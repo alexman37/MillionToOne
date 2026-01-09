@@ -91,8 +91,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff1ecae31fc34b14b99a077018456d1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  onField: 
-  value: 
+  cpdType: 0
+  category: 
   noButton: {fileID: 2551503029642168376}
   yesButton: {fileID: 2551503029266111752}
   title: {fileID: 2551503030228828207}
@@ -265,7 +265,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 175, y: 180}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 150, y: 100}
   m_Pivot: {x: 1, y: 1}
 --- !u!222 &2551503029569889239
@@ -318,7 +318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f7f387ba31b510488eab596dec0f2fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  onField: 
+  cpdType: 0
   img: {fileID: 0}
   formButtons: []
   formObjectComponent: {fileID: 2551503028938998425}

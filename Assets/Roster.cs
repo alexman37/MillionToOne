@@ -58,6 +58,12 @@ public class Roster
                 new CPD_FilePath(CPD_Type.BodyType, true, "properties/bodyTypes", "CharSprites64/Body/"),
                 new CPD_FilePath(CPD_Type.Face, false, "properties/faceTypes", "CharSprites64/Face/"),
                 new CPD_FilePath(CPD_Type.HeadType, false, "properties/headTypes", "CharSprites64/Head/"),
+                new CPD_FilePath(CPD_Type.Test1, true, "properties/testType", null),
+                new CPD_FilePath(CPD_Type.Test2, true, "properties/testType", null),
+                new CPD_FilePath(CPD_Type.Test3, true, "properties/testType", null),
+                new CPD_FilePath(CPD_Type.Test4, true, "properties/testType", null),
+                new CPD_FilePath(CPD_Type.Test5, true, "properties/testType", null),
+                new CPD_FilePath(CPD_Type.Test6, true, "properties/testType", null),
             };
             cpdConstrainables = new List<CPD>();
             cpdCounts = new List<int>();

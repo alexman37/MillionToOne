@@ -1,0 +1,8 @@
+### Delete this when ready.
+
+a;A;X;Type A
+b;B;X;Type B
+c;C;X;Type C
+d;D;X;Type D
+e;E;X;Type E
+f;F;X;Type F

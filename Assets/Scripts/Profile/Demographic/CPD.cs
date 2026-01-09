@@ -120,7 +120,15 @@ public enum CPD_Type
     HairStyle,
     HairColor,
     SkinTone,
-    BodyType, // TODO remove
+
+    // Temporary (TODO remove)
+    BodyType,
+    Test1,
+    Test2,
+    Test3,
+    Test4,
+    Test5,
+    Test6,
 
     // Not constrainable
     Face,

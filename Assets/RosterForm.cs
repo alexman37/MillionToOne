@@ -8,6 +8,7 @@ using UnityEngine;
 public class RosterForm : MonoBehaviour
 {
     public static RosterForm instance;
+    RectTransform self;
 
     [SerializeField] GameObject formButtonGroupTemplate; // use this prefab to create formField groups.
     CPD[] formFields; // the list of form fields. There should be one for each CONSTRAINABLE CPD.
@@ -21,6 +22,8 @@ public class RosterForm : MonoBehaviour
         if (instance == null) instance = this;
         else Destroy(gameObject);
 
+        self = this.GetComponent<RectTransform>();
+
         // Since this depends on the roster being created first, we actually want to instantiate a RosterForm object
         // within Roster, once we know it's at least finished gathering all the CPD lists together.
         formFields = Roster.cpdConstrainables.ToArray();
@@ -32,10 +35,14 @@ public class RosterForm : MonoBehaviour
     /// </summary>
     public void createFormButtonGroups()
     {
+        nextFormGroupOffset = 0;
+
         foreach(CPD cpd in formFields)
         {
             createWithParameters(cpd.cpdType, cpd.categories);
         }
+
+        self.sizeDelta = new Vector2(self.rect.width, nextFormGroupOffset);
     }
 
     /// <summary>
