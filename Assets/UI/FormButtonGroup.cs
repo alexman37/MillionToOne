@@ -39,7 +39,6 @@ public class FormButtonGroup : MonoBehaviour
             RectTransform rt = next.GetComponent<RectTransform>();
             standardHeight = rt.rect.height;
             rt.anchoredPosition += new Vector2(0, count * -standardHeight);
-            Debug.Log(rt.anchoredPosition);
 
             next.name = cat;
 

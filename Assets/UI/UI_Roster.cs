@@ -10,7 +10,7 @@ using TMPro;
 public class UI_Roster : MonoBehaviour
 {
     // How many characters should we display at a time?
-    public const int CHARACTERS_TO_SHOW = 20;
+    public const int CHARACTERS_TO_SHOW = 50;
 
     public static UI_Roster instance;
 
@@ -61,12 +61,11 @@ public class UI_Roster : MonoBehaviour
         RectTransform rt = container.GetComponent<RectTransform>();
 
         container.transform.SetParent(transform);
+        rt.localScale = new Vector3(1, 1, 1);
 
-        Debug.Log(container.GetComponent<RectTransform>().pivot);
         rt.pivot = new Vector2(0, 1);
         rt.anchorMax = new Vector2(0, 1);
         rt.anchorMin = new Vector2(0, 1);
-        Debug.Log(container.GetComponent<RectTransform>().pivot);
         rt.anchoredPosition = new Vector2(0, 0);
     }
 
@@ -121,7 +120,6 @@ public class UI_Roster : MonoBehaviour
 
         for (int i = 0; i < CHARACTERS_TO_SHOW; i++)
         {
-            Debug.Log(roster.shownRoster.Count);
             Character c = roster.shownRoster[i];
 
             //instantiate card in correct position
@@ -130,8 +128,8 @@ public class UI_Roster : MonoBehaviour
             newCard.rectTransform.localPosition = new Vector3(
                 startingX + Mathf.Floor(i % entriesPerRow) * (cardWidth + cardOffsetW), 
                 startingY - Mathf.Floor(i / entriesPerRow) * (cardHeight + cardOffsetH), 0);
+            newCard.rectTransform.localScale = Vector3.one;
             newCard.gameObject.SetActive(true);
-            Debug.Log("POS " + newCard.rectTransform.position);
 
             roster.shownRosterSprites[i].name = i.ToString();
             // TODO would it be better as a sprite renderer???
