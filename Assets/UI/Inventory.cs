@@ -19,7 +19,7 @@ public class Inventory : MonoBehaviour
         PlayerAgent.playerGotCard -= addCardToInventory;
     }
 
-    public void addCardToInventory(Card c)
+    public void addCardToInventory(Card c, int _)
     {
         GameObject newCard;
         Card data;

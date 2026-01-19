@@ -139,7 +139,7 @@ public class FormButton : MonoBehaviour
     /// <summary>
     /// Update constraints from somewhere else
     /// </summary>
-    private void updateConstraintFromCard(Card card)
+    private void updateConstraintFromCard(Card card, int _)
     {
         if(card is ClueCard)
         {

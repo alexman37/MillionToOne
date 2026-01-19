@@ -7,31 +7,45 @@ public class CPUAgent : Agent
 {
     int id;
 
-    public static event Action<int, Card> cpuGotCard = (_,__) => { };
+    public static event Action<int, Card, int> cpuGotCard = (_,__,n) => { };
+    public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
     public static event Action cpuTurnOver = () => { };
 
     public CPUAgent(int id, string name)
     {
         this.id = id;
         agentName = name;
+
+        Roster.clearAllConstraints += clearConstraints;
+    }
+
+    ~CPUAgent()
+    {
+        Roster.clearAllConstraints -= clearConstraints;
     }
 
     public override void markAsReady()
     {
         Debug.Log("It's CPU player " + agentName + "'s turn.");
-        Debug.LogWarning("Skipping turn as the CPU is not implemented yet.");
-        cpuTurnOver.Invoke();
+        deleteMe();
     }
 
-    public override void acquireCard(Card card)
+    public override int acquireCard(Card card)
     {
         inventory.Add(card);
+        cpuGotCard.Invoke(id, card, inventory.Count);
+        updateConstraintsFromCard(card);
+
+        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
         Debug.Log("CPU player " + agentName + " acquires card: " + card);
+        return inventory.Count;
     }
 
-    public override void acquireCards(List<Card> cards)
+    public override int acquireCards(List<Card> cards)
     {
         inventory.AddRange(cards);
+        return inventory.Count;
     }
 
     public override void playCard(Card card)
@@ -48,4 +62,49 @@ public class CPUAgent : Agent
     {
 
     }
+
+    public override void clearConstraints()
+    {
+        // "Clear" also serves as initialization for the constraints lists if need be
+        rosterConstraints = new RosterConstraints();
+        foreach (CPD cpd in Roster.cpdConstrainables)
+        {
+            rosterConstraints.clearConstraints(cpd);
+        }
+    }
+
+    // CPU handles their constraints locally.
+    private void updateConstraintsFromCard(Card receivedCard)
+    {
+        if (receivedCard is ClueCard)
+        {
+            // TODO CPU may have to distinguish between guaranteed facts and guesses, so "lock" these constraints in
+            ClueCard cc = receivedCard as ClueCard;
+            if (cc.onTarget)
+            {
+                rosterConstraints.onlyConstraint(cc.cpdType, cc.category);
+            } else
+            {
+                rosterConstraints.addConstraint(cc.cpdType, cc.category);
+            }
+        }
+    }
+
+
+    // TODO REMOVE ALL
+    private void deleteMe()
+    {
+        TurnDriver.instance.acquireCard(this);
+
+        cpuTurnOver.Invoke();
+    }
 }
+
+
+
+
+// TODO...
+/*public class CPUAgentLogic
+{
+    
+}*/

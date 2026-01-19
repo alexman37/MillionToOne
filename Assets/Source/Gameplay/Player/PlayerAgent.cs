@@ -9,7 +9,8 @@ public class PlayerAgent : Agent
 
     bool isYourTurn = false;
 
-    public static event Action<Card> playerGotCard = (_) => { };
+    public static event Action<Card, int> playerGotCard = (_,n) => { };
+    public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
 
     // Singleton. Do not allow more than one
@@ -25,6 +26,13 @@ public class PlayerAgent : Agent
         {
             Debug.LogWarning("Did not create a second PlayerAgent.");
         }
+
+        Roster.clearAllConstraints += clearConstraints;
+    }
+
+    ~PlayerAgent()
+    {
+        Roster.clearAllConstraints -= clearConstraints;
     }
 
     public override void markAsReady()
@@ -33,20 +41,23 @@ public class PlayerAgent : Agent
         Debug.Log("It's the player's turn.");
     }
 
-    public override void acquireCard(Card card)
+    public override int acquireCard(Card card)
     {
         inventory.Add(card);
-        playerGotCard.Invoke(card);
+        playerGotCard.Invoke(card, inventory.Count);
         Debug.Log("The player acquires card: " + card);
 
-        
+        updateConstraintsFromCard(card);
+        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
 
         playerTurnOver.Invoke();
+        return inventory.Count;
     }
 
-    public override void acquireCards(List<Card> cards)
+    public override int acquireCards(List<Card> cards)
     {
         inventory.AddRange(cards);
+        return inventory.Count;
     }
 
     public override void playCard(Card card)
@@ -62,5 +73,33 @@ public class PlayerAgent : Agent
     public override void useAbility()
     {
 
+    }
+
+    public override void clearConstraints()
+    {
+        // "Clear" also serves as initialization for the constraints lists if need be
+        rosterConstraints = new RosterConstraints();
+        foreach (CPD cpd in Roster.cpdConstrainables)
+        {
+            rosterConstraints.clearConstraints(cpd);
+        }
+    }
+
+    // CPU handles their constraints locally.
+    private void updateConstraintsFromCard(Card receivedCard)
+    {
+        if (receivedCard is ClueCard)
+        {
+            // TODO CPU may have to distinguish between guaranteed facts and guesses, so "lock" these constraints in
+            ClueCard cc = receivedCard as ClueCard;
+            if (cc.onTarget)
+            {
+                rosterConstraints.onlyConstraint(cc.cpdType, cc.category);
+            }
+            else
+            {
+                rosterConstraints.addConstraint(cc.cpdType, cc.category);
+            }
+        }
     }
 }

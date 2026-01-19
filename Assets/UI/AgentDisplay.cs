@@ -37,4 +37,11 @@ public class AgentDisplay : MonoBehaviour
     {
         actionCardCount.text = "x" + newCount;
     }
+
+    public void setProgression(int newCount)
+    {
+        // TODO something with groupings
+        Debug.Log("The new count is " + newCount);
+        playerProgress.text = Utility.AbbreviatedNumber(newCount).Item1;
+    }
 }

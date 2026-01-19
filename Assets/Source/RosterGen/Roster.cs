@@ -20,7 +20,7 @@ public class Roster
     public List<Sprite> shownRosterSprites; // the sprites of the currently shown characters (for fast access).
     public HashSet<int> currentRosterIDs; // the simulated IDs of all characters we are currently showing.
 
-    public RosterConstraints rosterConstraints;  // All constraints currently on the roster
+    // Each agent has their own set of roster constraints they will apply to the general roster.
 
     public static List<CPD> cpdInstances;      // All CPD singletons
     public static List<CPD> cpdConstrainables; // Only the constrainable CPDs (packaged in sim ID, in this order)
@@ -32,6 +32,7 @@ public class Roster
 
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
+    public static event Action clearAllConstraints;
 
 
     // Optimization for "get Random simulated ID":
@@ -118,19 +119,13 @@ public class Roster
             shownRosterSprites = new List<Sprite>();
         }
 
-        // "Clear" also serves as initialization for the constraints lists if need be
-        rosterConstraints = new RosterConstraints();
-        foreach (CPD cpd in cpdConstrainables)
-        {
-            rosterConstraints.clearConstraints(cpd);
-        }
-        
-        applyConstraints(rosterConstraints);
+        clearAllConstraints.Invoke();
+        applyConstraints(PlayerAgent.instance.rosterConstraints);
 
         // First list generation
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
+            int simId = SimulatedID.getRandomSimulatedID(PlayerAgent.instance.rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
             shownRoster.Add(new Character(i, simId));
 
@@ -164,7 +159,7 @@ public class Roster
     /// </summary>
     public void redrawRosterVis()
     {
-        applyConstraints(rosterConstraints);
+        applyConstraints(PlayerAgent.instance.rosterConstraints);
         List<Character> newShownRoster = new List<Character>();
         int size = Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, simulatedCurrentRosterSize);
 
@@ -173,7 +168,7 @@ public class Roster
         currentRosterIDs.Clear();
         for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, shownRoster.Count) && count < size; i++)
         {
-            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, rosterConstraints))
+            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, PlayerAgent.instance.rosterConstraints))
             {
                 currentRosterIDs.Add(shownRoster[i].simulatedId);
                 newShownRoster.Add(shownRoster[i]);
@@ -188,7 +183,7 @@ public class Roster
         shownRoster = newShownRoster;
         for (int i = count; i < size; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
+            int simId = SimulatedID.getRandomSimulatedID(PlayerAgent.instance.rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
             shownRoster.Add(new Character(i, simId));
 
@@ -208,22 +203,30 @@ public class Roster
     /// </summary>
     public void applyConstraints(RosterConstraints constraints)
     {
+        simulatedCurrentRosterSize = getNewRosterSizeFromConstraints(constraints);
+
+        Debug.Log("New roster size " + simulatedCurrentRosterSize);
+
+        constrainedResult.Invoke(simulatedCurrentRosterSize);
+    }
+
+    /// <summary>
+    /// Get the new size of a roster with constraints applied to it
+    /// </summary>
+    public int getNewRosterSizeFromConstraints(RosterConstraints constraints)
+    {
         // The roster size will decrease when applying a new constraint (and vice versa)
         int newRosterSize = simulatedTotalRosterSize;
 
         List<CPD_Type> types = new List<CPD_Type>(constraints.allCurrentConstraints.Keys);
-        
+
         foreach (CPD_Type tp in types)
         {
             // Assuming all probabilities are equal.
             newRosterSize = Mathf.RoundToInt(cpdByType[tp].getProportionOfCategories(constraints.allCurrentConstraints[tp]) * (float)newRosterSize);
         }
-        simulatedCurrentRosterSize = newRosterSize;
-
-        // TODO +1?
-        Debug.Log("New roster size " + newRosterSize);
-
-        constrainedResult.Invoke(simulatedCurrentRosterSize);
+        
+        return newRosterSize;
     }
 
     /// <summary>
@@ -232,10 +235,10 @@ public class Roster
     public void reInitializeVariants(CPD_Type onType, List<string> buttonsAreOff)
     {
         CPD cpd = cpdByType[onType];
-        rosterConstraints.clearConstraints(cpd);
+        PlayerAgent.instance.rosterConstraints.clearConstraints(cpd);
         foreach(string exclude in buttonsAreOff)
         {
-            rosterConstraints.addConstraint(cpd.cpdType, exclude);
+            PlayerAgent.instance.rosterConstraints.addConstraint(cpd.cpdType, exclude);
         }
     }
 

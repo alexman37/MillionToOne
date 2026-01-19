@@ -12,6 +12,7 @@ public class TurnDriver : MonoBehaviour
     public List<Agent> agentsInOrder = new List<Agent>();
     public Dictionary<int, Agent> agentIDmappings = new Dictionary<int, Agent>();
 
+    public Roster currentRoster;
     public Agent playerAgent;
     public int totalRotations;
     private int currTurn;  // from 0-num agents
@@ -36,8 +37,20 @@ public class TurnDriver : MonoBehaviour
         CPUAgent cpuAgent1 = new CPUAgent(1, "Hazel");
         agentsInOrder.Add(cpuAgent1);
 
-        CPUAgent cpuAgent2 = new CPUAgent(1, "Winter");
+        CPUAgent cpuAgent2 = new CPUAgent(2, "Winter");
         agentsInOrder.Add(cpuAgent2);
+
+
+        // TODO DELETE
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7586));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75867));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758677));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7586779));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75867795));
+        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758677956));
     }
 
     private void OnEnable()
@@ -55,6 +68,7 @@ public class TurnDriver : MonoBehaviour
 
     private void onRosterCreation(Roster rost)
     {
+        currentRoster = rost;
         Total_UI.instance.initializeUI(agentsInOrder, rost);
         generateDeck(rost);
     }

@@ -30,7 +30,7 @@ public class Utility
     /// </summary>
     public static (string, NumberGrouping) AbbreviatedNumber(int number)
     {
-        int numDigits = (int) Mathf.Log10(number);
+        int numDigits = Mathf.CeilToInt(Mathf.Log10(number) - 1);
         
         switch(numDigits)
         {
@@ -72,15 +72,15 @@ public class Utility
     // Assume number is greater than 9
     private static string decimalify(int number)
     {
-        float inter = (float)number / Mathf.Pow(10, Mathf.Log10(number));
+        float inter = (float)number / Mathf.Pow(10, Mathf.Ceil(Mathf.Log10(number) - 1));
         return inter.ToString("0.0");
     }
 
     // Assume number is greater than 9
     private static string chop(int number, int numDigits)
     {
-        float inter = (float)number / Mathf.Pow(10, Mathf.Log10(number));
-        int f = (int)(inter * Mathf.Pow(10, numDigits - 1));
+        float inter = (float)number / Mathf.Pow(10, Mathf.Ceil(Mathf.Log10(number) - 1));
+        int f = Mathf.RoundToInt(inter * Mathf.Pow(10, numDigits - 1));
         return f.ToString();
     }
 }

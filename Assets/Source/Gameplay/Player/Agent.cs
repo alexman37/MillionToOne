@@ -12,6 +12,8 @@ public abstract class Agent
     public List<Card> inventory = new List<Card>();
     public AgentAbility ability;
 
+    public RosterConstraints rosterConstraints;
+
     public bool isPlayer = false;
 
     /// <summary>
@@ -20,14 +22,16 @@ public abstract class Agent
     public abstract void markAsReady();
 
     /// <summary>
-    /// Give the agent a card
+    /// Give the agent a card.
+    /// Return the number of cards in hand afterwards
     /// </summary>
-    public abstract void acquireCard(Card card);
+    public abstract int acquireCard(Card card);
 
     /// <summary>
-    /// Give the agent several cards
+    /// Give the agent several cards.
+    /// Return the number of cards in hand afterwards
     /// </summary>
-    public abstract void acquireCards(List<Card> cards);
+    public abstract int acquireCards(List<Card> cards);
 
     /// <summary>
     /// Agent uses a card
@@ -43,6 +47,8 @@ public abstract class Agent
     /// Agent uses their special ability
     /// </summary>
     public abstract void useAbility();
+
+    public abstract void clearConstraints();
 
     public int getCardsCount()
     {
