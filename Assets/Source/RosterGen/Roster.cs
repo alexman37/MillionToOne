@@ -143,7 +143,19 @@ public class Roster
         savedCPD = 0;
         savedMod = 0;
 
+        targetId = UnityEngine.Random.Range(0, simulatedTotalRosterSize - 1);
+
         rosterReady.Invoke();
+    }
+
+
+    /// <summary>
+    /// Return a list of all the target's CPD stuff
+    /// </summary>
+    /// <returns></returns>
+    public List<CPD_Variant> getTargetAsCPDs()
+    {
+        return SimulatedID.unpackSimulatedID(targetId);
     }
 
 

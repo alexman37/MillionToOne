@@ -11,9 +11,9 @@ using TMPro;
 /// </summary>
 public class ClueCard : Card
 {
-    private CPD_Type cpdType;        // What CPD is this card about?
-    private string category;         // What category is it identifying?
-    private bool onTarget = false;   // If true, the target has this category
+    public CPD_Type cpdType;        // What CPD is this card about?
+    public string category;         // What category is it identifying?
+    public bool onTarget = false;   // If true, the target has this category
 
     private bool redacted = false;   // If true, no one can see what was on this card, making it functionally useless
 

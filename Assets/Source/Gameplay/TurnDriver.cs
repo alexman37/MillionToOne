@@ -37,27 +37,34 @@ public class TurnDriver : MonoBehaviour
         agentsInOrder.Add(cpuAgent1);
 
         CPUAgent cpuAgent2 = new CPUAgent(1, "Winter");
-        agentsInOrder.Add(cpuAgent1);
+        agentsInOrder.Add(cpuAgent2);
     }
 
     private void OnEnable()
     {
-        RosterGen.rosterCreationDone += generateDeck;
+        RosterGen.rosterCreationDone += onRosterCreation;
         PlayerAgent.playerTurnOver += nextInLine;
         CPUAgent.cpuTurnOver += nextInLine;
     }
 
     private void OnDisable()
     {
-        RosterGen.rosterCreationDone -= generateDeck;
+        RosterGen.rosterCreationDone -= onRosterCreation;
         PlayerAgent.playerTurnOver -= nextInLine;
     }
 
+    private void onRosterCreation(Roster rost)
+    {
+        Total_UI.instance.initializeUI(agentsInOrder, rost);
+        generateDeck(rost);
+    }
+
     // Generate the deck once you know what it should contain
-    private void generateDeck(Roster _)
+    private void generateDeck(Roster rost)
     {
         generalDeck = new List<Card>();
 
+        // Add to deck: All action card types
         /*generalDeck.Add(new ActionCard(ActionCardType.REPEAT));
         generalDeck.Add(new ActionCard(ActionCardType.SKIP));
         generalDeck.Add(new ActionCard(ActionCardType.REVEAL));
@@ -67,11 +74,24 @@ public class TurnDriver : MonoBehaviour
         generalDeck.Add(new ActionCard(ActionCardType.EXTRA_ASK_AROUND));
         generalDeck.Add(new ActionCard(ActionCardType.ORACLE));*/
 
+
+        // Get properties of target
+        List<CPD_Variant> targetData = rost.getTargetAsCPDs();
+        Dictionary<CPD_Type, string> targetProperties = new Dictionary<CPD_Type, string>();
+        foreach(CPD_Variant cpdVar in targetData)
+        {
+            targetProperties.Add(cpdVar.cpdType, cpdVar.category);
+        }
+
+        // Add to deck: All CPD cards except for the ones matching the target
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
             foreach(string cat in cpd.categories)
             {
-                generalDeck.Add(new ClueCard(cpd.cpdType, cat, false));
+                if(cat != targetProperties[cpd.cpdType])
+                {
+                    generalDeck.Add(new ClueCard(cpd.cpdType, cat, false));
+                }
             }
         }
 

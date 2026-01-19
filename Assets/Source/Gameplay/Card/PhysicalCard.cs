@@ -14,14 +14,10 @@ public class PhysicalCard : MonoBehaviour
 
     private Card data;
 
-    private Total_UI totalUI;
-
     // You must ensure the card component is created first, so we can't throw this in start
     public void initialize()
     {
         text.text = data.ToString();
-
-        totalUI = FindObjectOfType<Total_UI>();
     }
 
     public void setData(Card d)

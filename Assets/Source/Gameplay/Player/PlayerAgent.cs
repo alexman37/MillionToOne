@@ -15,6 +15,9 @@ public class PlayerAgent : Agent
     // Singleton. Do not allow more than one
     public PlayerAgent()
     {
+        // TODO player's name
+        agentName = "Player";
+
         if(instance == null)
         {
             instance = this;
@@ -35,6 +38,8 @@ public class PlayerAgent : Agent
         inventory.Add(card);
         playerGotCard.Invoke(card);
         Debug.Log("The player acquires card: " + card);
+
+        
 
         playerTurnOver.Invoke();
     }

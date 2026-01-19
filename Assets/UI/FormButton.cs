@@ -25,9 +25,10 @@ public class FormButton : MonoBehaviour
     public Button yesButton;
     public TextMeshProUGUI title;
 
-    private bool acceptingInput = true;
-    private bool noTicked = false;
-    private bool yesTicked = false;
+    private bool locked = false; // if true, you can not change this value ever again
+    private bool acceptingInput = true; // currently allowed / not allowed to change this value
+    private bool noTicked = false; // currently chosen as "no"
+    private bool yesTicked = false; // currently chosen as "yes"
 
     public FormButtonGroup partOfGroup;
 
@@ -46,12 +47,22 @@ public class FormButton : MonoBehaviour
         updatedConstraint += (_,__,f) => { };
     }
 
+    private void OnEnable()
+    {
+        PlayerAgent.playerGotCard += updateConstraintFromCard;
+    }
+
+    private void OnDisable()
+    {
+        PlayerAgent.playerGotCard -= updateConstraintFromCard;
+    }
+
     /// <summary>
     /// When hit YES button, you may either confirm or unconfirm it
     /// </summary>
     public void toggleYesButton()
     {
-        if (acceptingInput)
+        if (!locked && acceptingInput)
         {
             yesTicked = !yesTicked;
             if (yesTicked)
@@ -81,7 +92,7 @@ public class FormButton : MonoBehaviour
     /// </summary>
     public void toggleNoButton()
     {
-        if(acceptingInput && !yesTicked)
+        if(!locked && acceptingInput && !yesTicked)
         {
             noTicked = !noTicked;
             if (noTicked && state != FormButtonState.Confirmed)
@@ -102,22 +113,47 @@ public class FormButton : MonoBehaviour
     /// </summary>
     private void updateConstraintForButton()
     {
-        // Adjust draws
-        if(state == FormButtonState.Confirmed)
+        if(!locked)
         {
-            img1.color = Color.white;
-            img2.color = Color.green;
-        } else if (state == FormButtonState.Eliminated)
-        {
-            img2.color = Color.white;
-            img1.color = Color.red;
-        } else
-        {
-            img1.color = Color.white;
-            img2.color = Color.white;
-        }
+            // Adjust draws
+            if (state == FormButtonState.Confirmed)
+            {
+                img1.color = Color.white;
+                img2.color = Color.green;
+            }
+            else if (state == FormButtonState.Eliminated)
+            {
+                img2.color = Color.white;
+                img1.color = Color.red;
+            }
+            else
+            {
+                img1.color = Color.white;
+                img2.color = Color.white;
+            }
 
-        updatedConstraint.Invoke(cpdType, category, state);
+            updatedConstraint.Invoke(cpdType, category, state);
+        }
+    }
+
+    /// <summary>
+    /// Update constraints from somewhere else
+    /// </summary>
+    private void updateConstraintFromCard(Card card)
+    {
+        if(card is ClueCard)
+        {
+            ClueCard cc = card as ClueCard;
+            if (this.cpdType == cc.cpdType && this.category == cc.category)
+            {
+                this.state = cc.onTarget ? FormButtonState.Confirmed : FormButtonState.Eliminated;
+
+                if (this.state == FormButtonState.Confirmed) toggleYesButton();
+                else toggleNoButton();
+                locked = true;
+            }
+        }
+        
     }
 
     /// <summary>
@@ -132,17 +168,18 @@ public class FormButton : MonoBehaviour
 
         foreach(FormButton b in buttonsToToggle)
         {
-            if(b.category != category)
+            if (b.category != category)
             {
                 b.acceptingInput = !wasConfirmed;
                 b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
                 b.state = b.noTicked ? FormButtonState.Eliminated : FormButtonState.Unknown;
-            } else
+            }
+            else
             {
                 b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
             }
 
-            if(b.noTicked) buttonsAreOff.Add(b.category);
+            if (b.noTicked) buttonsAreOff.Add(b.category);
         }
         if(!wasConfirmed)
         {
