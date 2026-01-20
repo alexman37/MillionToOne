@@ -6,6 +6,8 @@ public class Playerbase : MonoBehaviour
 {
     public GameObject agentDisplayTemplate;
     private List<AgentDisplay> agentDisplays = new List<AgentDisplay>();
+    [SerializeField] private Sprite hoveredAgentSprite;
+    [SerializeField] private Sprite selectedAgentSprite;
 
 
     private void OnEnable()

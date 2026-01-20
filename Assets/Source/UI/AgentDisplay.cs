@@ -12,9 +12,15 @@ public class AgentDisplay : MonoBehaviour
     public TextMeshProUGUI clueCardCount;
     public TextMeshProUGUI actionCardCount;
 
+    private Image bottom;
+    [SerializeField] private Sprite emptySpr;
+    [SerializeField] private Sprite hoveredSpr;
+    [SerializeField] private Sprite selectedSpr;
+
     // Start is called before the first frame update
     void Start()
     {
+        bottom = this.GetComponent<Image>();
         
     }
 
@@ -43,5 +49,22 @@ public class AgentDisplay : MonoBehaviour
         // TODO something with groupings
         Debug.Log("The new count is " + newCount);
         playerProgress.text = Utility.AbbreviatedNumber(newCount).Item1;
+    }
+
+
+    public void OnHover()
+    {
+        bottom.sprite = hoveredSpr;
+    }
+
+    public void OnHoverEnd()
+    {
+        bottom.sprite = emptySpr;
+    }
+
+    public void OnSelect()
+    {
+        // TODO select this and only this
+        bottom.sprite = selectedSpr;
     }
 }

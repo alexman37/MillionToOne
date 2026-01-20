@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// RosterForm is the controller for the "sorting menu" the player uses to narrow down the roster to their target.
@@ -55,7 +57,12 @@ public class RosterForm : MonoBehaviour
 
         FormButtonGroup formGroup = next.GetComponent<FormButtonGroup>();
 
+        formGroup.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = cpdType.ToString().ToUpper();
+
         // Offset every form field grouping by a constant amount of pixels
-        nextFormGroupOffset += formGroup.buildFormButtonGroup(cpdType, cpdCategories, -nextFormGroupOffset) + 10;
+        float totalHeight = formGroup.buildFormButtonGroup(cpdType, cpdCategories, -nextFormGroupOffset) + 30;
+        RectTransform container = next.GetComponent<Image>().rectTransform;
+        container.sizeDelta = new Vector2(container.rect.width, totalHeight + 10);
+        nextFormGroupOffset += totalHeight + 20;
     }
 }
