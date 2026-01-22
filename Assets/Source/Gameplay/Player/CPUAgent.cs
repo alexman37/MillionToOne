@@ -5,8 +5,6 @@ using System;
 
 public class CPUAgent : Agent
 {
-    int id;
-
     public static event Action<int, Card, int> cpuGotCard = (_,__,n) => { };
     public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
     public static event Action cpuTurnOver = () => { };

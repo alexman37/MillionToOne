@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 /// <summary>
 /// RosterForm is the controller for the "sorting menu" the player uses to narrow down the roster to their target.
@@ -14,7 +15,14 @@ public class RosterForm : MonoBehaviour
 
     [SerializeField] GameObject formButtonGroupTemplate; // use this prefab to create formField groups.
     CPD[] formFields; // the list of form fields. There should be one for each CONSTRAINABLE CPD.
-                        // (other CPDs can exist and be irrelevant in terms of sorting - such as face.)
+                      // (other CPDs can exist and be irrelevant in terms of sorting - such as face.)
+
+    // Related to asking around
+    [SerializeField] private TextMeshProUGUI formTitle;
+    [SerializeField] private GameObject askAroundCommands;
+    private List<CPD_Category> askingFor = new List<CPD_Category>();
+    private int agentToAsk;
+    public static event Action completedAskAround;
 
     private float nextFormGroupOffset = 0;
 
@@ -30,6 +38,22 @@ public class RosterForm : MonoBehaviour
         // within Roster, once we know it's at least finished gathering all the CPD lists together.
         formFields = Roster.cpdConstrainables.ToArray();
         createFormButtonGroups();
+    }
+
+    private void OnEnable()
+    {
+        AgentDisplay.selectedAgent += StartedAskingAround;
+        AgentDisplay.deselectedAgent += StoppedAskingAround;
+        FormButton.addToAskAroundList += AddToAskFor;
+        FormButton.removeFromAskAroundList += AddToAskFor;
+    }
+
+    private void OnDisable()
+    {
+        AgentDisplay.selectedAgent -= StartedAskingAround;
+        AgentDisplay.deselectedAgent -= StoppedAskingAround;
+        FormButton.addToAskAroundList -= AddToAskFor;
+        FormButton.removeFromAskAroundList -= AddToAskFor;
     }
 
     /// <summary>
@@ -64,5 +88,36 @@ public class RosterForm : MonoBehaviour
         RectTransform container = next.GetComponent<Image>().rectTransform;
         container.sizeDelta = new Vector2(container.rect.width, totalHeight + 10);
         nextFormGroupOffset += totalHeight + 20;
+    }
+
+
+    private void StartedAskingAround(int id)
+    {
+        askAroundCommands.SetActive(true);
+        formTitle.text = "ASKING " + id;
+    }
+
+    public void StoppedAskingAround()
+    {
+        askAroundCommands.SetActive(false);
+        formTitle.text = "CHARACTER SHEET";
+        completedAskAround.Invoke();
+    }
+
+    private void AddToAskFor(CPD_Category cat)
+    {
+        askingFor.Add(cat);
+    }
+
+    private void RemoveFromAskFor(CPD_Category cat)
+    {
+        askingFor.Remove(cat);
+    }
+
+    public void AskAround()
+    {
+        // TODO: Ask for this agent with these properties
+        Debug.LogWarning("Not implemented asking around yet");
+        StoppedAskingAround();
     }
 }

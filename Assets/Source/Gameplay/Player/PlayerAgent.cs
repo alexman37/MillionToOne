@@ -19,6 +19,8 @@ public class PlayerAgent : Agent
         // TODO player's name
         agentName = "Player";
 
+        id = 0; // There can be only one...?
+
         if(instance == null)
         {
             instance = this;

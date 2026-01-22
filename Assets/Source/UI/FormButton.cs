@@ -25,6 +25,11 @@ public class FormButton : MonoBehaviour
     public Button yesButton;
     public TextMeshProUGUI title;
 
+    [SerializeField] private GameObject askAroundMenu;
+    [SerializeField] private Button askAroundAsk;
+    [SerializeField] private Image askAroundAssessment;
+    private bool currentlyAskingAround;
+
     private bool locked = false; // if true, you can not change this value ever again
     private bool acceptingInput = true; // currently allowed / not allowed to change this value
     private bool noTicked = false; // currently chosen as "no"
@@ -36,6 +41,9 @@ public class FormButton : MonoBehaviour
     public static event Action<CPD_Type, string, FormButtonState> updatedConstraint;
     // Re-initialize the list of constraints when un-confirming an option. Use pre-existing "no" values.
     public static event Action<CPD_Type, List<string>> reinitializeConstraints;
+
+    public static event Action<CPD_Category> addToAskAroundList = (_) => { };
+    public static event Action<CPD_Category> removeFromAskAroundList = (_) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -50,11 +58,17 @@ public class FormButton : MonoBehaviour
     private void OnEnable()
     {
         PlayerAgent.playerGotCard += updateConstraintFromCard;
+        AgentDisplay.selectedAgent += askAroundForAgent;
+        AgentDisplay.deselectedAgent += stopAskingAround;
+        RosterForm.completedAskAround += stopAskingAround;
     }
 
     private void OnDisable()
     {
         PlayerAgent.playerGotCard -= updateConstraintFromCard;
+        AgentDisplay.selectedAgent -= askAroundForAgent;
+        AgentDisplay.deselectedAgent -= stopAskingAround;
+        RosterForm.completedAskAround -= stopAskingAround;
     }
 
     /// <summary>
@@ -185,6 +199,45 @@ public class FormButton : MonoBehaviour
         {
             reinitializeConstraints.Invoke(cpdType, buttonsAreOff);
         }
+    }
+
+
+
+    ///   ASK  AROUND  SUBMENU
+
+
+    private void askAroundForAgent(int id)
+    {
+        // TODO get all data on this agent
+        askAroundMenu.SetActive(true);
+    }
+
+    private void stopAskingAround()
+    {
+        askAroundMenu.SetActive(false);
+        askAroundAsk.image.color = Color.white;
+        currentlyAskingAround = false;
+    }
+
+    // TODO...do we really have to create a new object for this every time
+    private void addToAskAround()
+    {
+        addToAskAroundList.Invoke(new CPD_Category(cpdType, category));
+        askAroundAsk.image.color = Color.green;
+        currentlyAskingAround = true;
+    }
+
+    private void removeFromAskAround()
+    {
+        removeFromAskAroundList.Invoke(new CPD_Category(cpdType, category));
+        askAroundAsk.image.color = Color.white;
+        currentlyAskingAround = false;
+    }
+
+    public void toggleAskAround()
+    {
+        if (currentlyAskingAround) removeFromAskAround();
+        else addToAskAround();
     }
 }
 

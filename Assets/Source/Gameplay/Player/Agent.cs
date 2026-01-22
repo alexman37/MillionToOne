@@ -5,6 +5,7 @@ using System;
 
 public abstract class Agent
 {
+    public int id;
     public string agentName;
     public Sprite portrait;
 
