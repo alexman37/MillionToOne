@@ -19,11 +19,13 @@ public class CPUAgent : Agent
         agentName = name;
 
         Roster.clearAllConstraints += clearConstraints;
+        ClueCard.clueCardDeclassified += onClueCardDeclassified;
     }
 
     ~CPUAgent()
     {
         Roster.clearAllConstraints -= clearConstraints;
+        ClueCard.clueCardDeclassified -= onClueCardDeclassified;
     }
 
     public override void markAsReady()
@@ -37,6 +39,7 @@ public class CPUAgent : Agent
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
 
+        rosterLogic.AddedCardToHand(card);
         updateConstraintsFromCard(card);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
 
@@ -47,6 +50,8 @@ public class CPUAgent : Agent
     {
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
+
+        rosterLogic.AddedCardToHand(card);
         updateConstraintsFromCard(card);
 
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
@@ -64,6 +69,12 @@ public class CPUAgent : Agent
     public override void playCard(Card card)
     {
 
+    }
+
+    public override void onClueCardDeclassified(ClueCard cc)
+    {
+        updateConstraintsFromCard(cc);
+        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
     }
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
@@ -89,7 +100,6 @@ public class CPUAgent : Agent
     // CPU handles their constraints locally.
     private void updateConstraintsFromCard(Card receivedCard)
     {
-        rosterLogic.AddedCardToHand(receivedCard);
         if (receivedCard is ClueCard)
         {
             // TODO CPU may have to distinguish between guaranteed facts and guesses, so "lock" these constraints in

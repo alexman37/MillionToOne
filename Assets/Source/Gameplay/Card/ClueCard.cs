@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 
 /// <summary>
 /// A Clue card contains information about what the target is NOT.
@@ -16,6 +17,8 @@ public class ClueCard : Card
     public bool onTarget = false;   // If true, the target has this category
 
     private bool redacted = false;   // If true, no one can see what was on this card, making it functionally useless
+
+    public static event Action<ClueCard> clueCardDeclassified;
 
 
     public ClueCard(CPD_Type cpdType, string cat, bool onTarget)
@@ -36,7 +39,8 @@ public class ClueCard : Card
 
     public override void play()
     {
-        
+        // Update the common constraints. Everyone knows this information now.
+        clueCardDeclassified.Invoke(this);
     }
 
     // One redacted, there's nothing you can do to get it back.

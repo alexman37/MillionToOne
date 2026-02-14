@@ -40,6 +40,12 @@ public abstract class Agent
     public abstract int acquireCards(List<Card> cards);
 
     /// <summary>
+    /// When a clue card is declassified (shown to everyone),
+    /// Update your own information automatically
+    /// </summary>
+    public abstract void onClueCardDeclassified(ClueCard cc);
+
+    /// <summary>
     /// Agent uses a card
     /// </summary>
     public abstract void playCard(Card card);

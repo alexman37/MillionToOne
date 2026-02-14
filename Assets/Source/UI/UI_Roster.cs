@@ -88,7 +88,7 @@ public class UI_Roster : MonoBehaviour
         inCommonMode = true;
         commonButton.color = Color.yellow;
         filteredButton.color = Color.gray;
-        roster.withCommonConstraints = true;
+        roster.setCommonConstraints(true);
     }
 
     public void enableFilteredMode()
@@ -96,7 +96,7 @@ public class UI_Roster : MonoBehaviour
         inCommonMode = false;
         commonButton.color = Color.gray;
         filteredButton.color = Color.yellow;
-        roster.withCommonConstraints = false;
+        roster.setCommonConstraints(false);
     }
 
     /// <summary>

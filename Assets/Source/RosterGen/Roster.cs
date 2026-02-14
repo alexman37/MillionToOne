@@ -55,6 +55,8 @@ public class Roster
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
 
+        ClueCard.clueCardDeclassified += onClueCardDeclassified;
+
         // No need to recreate CPDs on each load
         if(cpdInstances == null)
         {
@@ -111,6 +113,11 @@ public class Roster
         createRoster();
     }
 
+    ~Roster()
+    {
+        ClueCard.clueCardDeclassified -= onClueCardDeclassified;
+    }
+
     /// <summary>
     /// Called each time you start a new game.
     /// </summary>
@@ -151,6 +158,27 @@ public class Roster
         rosterReady.Invoke();
     }
 
+    public void setCommonConstraints(bool withCommon)
+    {
+        withCommonConstraints = withCommon;
+        if(withCommon)
+        {
+            applyConstraints(commonConstraints);
+        } else
+        {
+            applyConstraints(PlayerAgent.instance.rosterConstraints);
+        }
+        redrawRosterVis();
+    }
+
+    public void onClueCardDeclassified(ClueCard cc)
+    {
+        commonConstraints.addConstraint(cc.cpdType, cc.category);
+        if(withCommonConstraints)
+        {
+            redrawRosterVis();
+        }
+    }
 
     /// <summary>
     /// Return a list of all the target's CPD stuff
@@ -222,8 +250,6 @@ public class Roster
     public void applyConstraints(RosterConstraints constraints)
     {
         simulatedCurrentRosterSize = getNewRosterSizeFromConstraints(constraints);
-
-        Debug.Log("New roster size " + simulatedCurrentRosterSize);
 
         constrainedResult.Invoke(simulatedCurrentRosterSize);
     }
@@ -467,6 +493,7 @@ public class RosterConstraints
 {
     // What CPD type are you restricting, and, what categories in that CPD are you allowing?
     public Dictionary<CPD_Type, HashSet<string>> allCurrentConstraints;
+    private object lockObj = new object();
 
     public RosterConstraints()
     {
@@ -480,7 +507,10 @@ public class RosterConstraints
     /// <param name="constraint">This category will no longer be accepted</param>
     public void addConstraint(CPD_Type onType, string constraint)
     {
-        allCurrentConstraints[onType].Add(constraint);
+        lock(lockObj)
+        {
+            allCurrentConstraints[onType].Add(constraint);
+        }
     }
 
     /// <summary>
@@ -490,7 +520,10 @@ public class RosterConstraints
     /// <param name="constraint">This category will once again be allowed</param>
     public void removeConstraint(CPD_Type onType, string constraint)
     {
-        allCurrentConstraints[onType].Remove(constraint);
+        lock(lockObj)
+        {
+            allCurrentConstraints[onType].Remove(constraint);
+        }
     }
 
     /// <summary>
@@ -500,9 +533,12 @@ public class RosterConstraints
     /// <param name="constraint">Restricts everything but this category</param>
     public void onlyConstraint(CPD_Type onType, string constraint)
     {
-        allCurrentConstraints[onType].Clear();
-        Roster.cpdByType[onType].categories.ForEach(cat => allCurrentConstraints[onType].Add(cat));
-        allCurrentConstraints[onType].Remove(constraint);
+        lock(lockObj)
+        {
+            allCurrentConstraints[onType].Clear();
+            Roster.cpdByType[onType].categories.ForEach(cat => allCurrentConstraints[onType].Add(cat));
+            allCurrentConstraints[onType].Remove(constraint);
+        }
     }
 
     /// <summary>
@@ -511,24 +547,30 @@ public class RosterConstraints
     /// <param name="cpd">Clear all constraints from this CPD</param>
     public void clearConstraints(CPD cpd)
     {
-        CPD_Type onType = cpd.cpdType;
-        if (allCurrentConstraints.ContainsKey(onType))
+        lock(lockObj)
         {
-            allCurrentConstraints[onType].Clear();
-        }
+            CPD_Type onType = cpd.cpdType;
+            if (allCurrentConstraints.ContainsKey(onType))
+            {
+                allCurrentConstraints[onType].Clear();
+            }
 
-        else
-        {
-            //Debug.LogWarning($"Setting up constraints for {onType}");
-            allCurrentConstraints.Add(onType, new HashSet<string>());
+            else
+            {
+                //Debug.LogWarning($"Setting up constraints for {onType}");
+                allCurrentConstraints.Add(onType, new HashSet<string>());
+            }
         }
     }
 
     public void clearAllConstraints()
     {
-        foreach (CPD cpd in Roster.cpdConstrainables)
+        lock(lockObj)
         {
-            clearConstraints(cpd);
+            foreach (CPD cpd in Roster.cpdConstrainables)
+            {
+                clearConstraints(cpd);
+            }
         }
     }
 }

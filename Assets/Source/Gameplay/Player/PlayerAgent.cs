@@ -10,6 +10,7 @@ public class PlayerAgent : Agent
     bool isYourTurn = false;
 
     public static event Action<Card, int> playerGotCard = (_,n) => { };
+    public static event Action<Card, int> playerLostCard = (_,n) => { };
     public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
 
@@ -30,11 +31,13 @@ public class PlayerAgent : Agent
         }
 
         Roster.clearAllConstraints += clearConstraints;
+        ClueCard.clueCardDeclassified += onClueCardDeclassified;
     }
 
     ~PlayerAgent()
     {
         Roster.clearAllConstraints -= clearConstraints;
+        ClueCard.clueCardDeclassified -= onClueCardDeclassified;
     }
 
     public override void markAsReady()
@@ -75,7 +78,21 @@ public class PlayerAgent : Agent
 
     public override void playCard(Card card)
     {
+        // Gameplay result depends on what the card is - clue or action
+        card.play();
 
+        // For the player, just remove it from their inventory
+        int cardex = inventory.IndexOf(card);
+        inventory.RemoveAt(cardex);
+        playerLostCard.Invoke(card, cardex);
+
+        playerTurnOver.Invoke();
+    }
+
+    public override void onClueCardDeclassified(ClueCard cc)
+    {
+        updateConstraintsFromCard(cc);
+        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
     }
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
