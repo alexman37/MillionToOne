@@ -443,6 +443,7 @@ public class Roster
 
 /// <summary>
 /// List of roster constraints - what categories of what CPD's to sort by
+/// The Player uses this
 /// </summary>
 public class RosterConstraints
 {
@@ -505,3 +506,8 @@ public class RosterConstraints
         }
     }
 }
+
+
+// ----------------------------------------------------------
+// For CPU's version of RosterConstraints, see the file CPURosterLogic
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

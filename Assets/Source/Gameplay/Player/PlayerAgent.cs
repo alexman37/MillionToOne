@@ -69,7 +69,15 @@ public class PlayerAgent : Agent
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
     {
-
+        // Assume the agent you are asking is always a CPU.
+        CPUAgent cAgent = asking as CPUAgent;
+        foreach((CPD_Type, string) category in inquiry)
+        {
+            if (cAgent.rosterLogic.HasCardFor(category))
+            {
+                Debug.Log("The asked CPU has: " + category);
+            }
+        }
     }
 
     public override void useAbility()

@@ -20,7 +20,7 @@ public class RosterForm : MonoBehaviour
     // Related to asking around
     [SerializeField] private TextMeshProUGUI formTitle;
     [SerializeField] private GameObject askAroundCommands;
-    private List<CPD_Category> askingFor = new List<CPD_Category>();
+    private List<(CPD_Type, string)> askingFor = new List<(CPD_Type, string)>();
     private int agentToAsk;
     public static event Action completedAskAround;
 
@@ -94,6 +94,7 @@ public class RosterForm : MonoBehaviour
     private void StartedAskingAround(int id)
     {
         askAroundCommands.SetActive(true);
+        agentToAsk = id;
         formTitle.text = "ASKING " + id;
     }
 
@@ -104,20 +105,19 @@ public class RosterForm : MonoBehaviour
         completedAskAround.Invoke();
     }
 
-    private void AddToAskFor(CPD_Category cat)
+    private void AddToAskFor((CPD_Type, string) cat)
     {
         askingFor.Add(cat);
     }
 
-    private void RemoveFromAskFor(CPD_Category cat)
+    private void RemoveFromAskFor((CPD_Type, string) cat)
     {
         askingFor.Remove(cat);
     }
 
     public void AskAround()
     {
-        // TODO: Ask for this agent with these properties
-        Debug.LogWarning("Not implemented asking around yet");
+        PlayerAgent.instance.askAgent(TurnDriver.instance.agentsInOrder[agentToAsk], askingFor);
         StoppedAskingAround();
     }
 }

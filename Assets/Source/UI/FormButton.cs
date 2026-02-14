@@ -42,8 +42,8 @@ public class FormButton : MonoBehaviour
     // Re-initialize the list of constraints when un-confirming an option. Use pre-existing "no" values.
     public static event Action<CPD_Type, List<string>> reinitializeConstraints;
 
-    public static event Action<CPD_Category> addToAskAroundList = (_) => { };
-    public static event Action<CPD_Category> removeFromAskAroundList = (_) => { };
+    public static event Action<(CPD_Type, string)> addToAskAroundList = (_) => { };
+    public static event Action<(CPD_Type, string)> removeFromAskAroundList = (_) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -222,14 +222,14 @@ public class FormButton : MonoBehaviour
     // TODO...do we really have to create a new object for this every time
     private void addToAskAround()
     {
-        addToAskAroundList.Invoke(new CPD_Category(cpdType, category));
+        addToAskAroundList.Invoke((cpdType, category));
         askAroundAsk.image.color = Color.green;
         currentlyAskingAround = true;
     }
 
     private void removeFromAskAround()
     {
-        removeFromAskAroundList.Invoke(new CPD_Category(cpdType, category));
+        removeFromAskAroundList.Invoke((cpdType, category));
         askAroundAsk.image.color = Color.white;
         currentlyAskingAround = false;
     }

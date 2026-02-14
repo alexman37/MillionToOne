@@ -369,31 +369,6 @@ public class CPD_Number : CPD
 }
 
 
-public class CPD_Category
-{
-    public CPD_Type cpdType;
-    public string category;
-
-    public CPD_Category(CPD_Type c, string t)
-    {
-        cpdType = c;
-        category = t;
-    }
-
-    public override bool Equals(object obj)
-    {
-        CPD_Category second = obj as CPD_Category;
-        return second.cpdType == cpdType && second.category == category;
-    }
-
-    // TODO: override??
-    public override int GetHashCode()
-    {
-        return base.GetHashCode();
-    }
-}
-
-
 /// <summary>
 /// Defines a specific variant of a CPD
 /// For example, the HairStyle CPD might have a "normal1" and "normal2" variant, both of which fall under the "normal" category

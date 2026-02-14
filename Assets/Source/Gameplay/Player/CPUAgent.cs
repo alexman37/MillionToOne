@@ -5,6 +5,10 @@ using System;
 
 public class CPUAgent : Agent
 {
+    // Tracks all relevant info this CPU would need to make decisions.
+    // TODO how much do we use constraints, how much roster logic?
+    public CPURosterLogic rosterLogic = new CPURosterLogic();
+
     public static event Action<int, Card, int> cpuGotCard = (_,__,n) => { };
     public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
     public static event Action cpuTurnOver = () => { };
@@ -74,6 +78,7 @@ public class CPUAgent : Agent
     // CPU handles their constraints locally.
     private void updateConstraintsFromCard(Card receivedCard)
     {
+        rosterLogic.AddedCardToHand(receivedCard);
         if (receivedCard is ClueCard)
         {
             // TODO CPU may have to distinguish between guaranteed facts and guesses, so "lock" these constraints in

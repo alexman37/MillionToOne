@@ -39,18 +39,6 @@ public class TurnDriver : MonoBehaviour
 
         CPUAgent cpuAgent2 = new CPUAgent(2, "Winter");
         agentsInOrder.Add(cpuAgent2);
-
-
-        // TODO DELETE
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7586));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75867));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758677));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(7586779));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(75867795));
-        Debug.Log("TEST OUTPUT " + Utility.AbbreviatedNumber(758677956));
     }
 
     private void OnEnable()
