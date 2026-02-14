@@ -18,10 +18,12 @@ public class FormButton : MonoBehaviour
     public string category; // which category is this FormButton tracking for the given CPD?
 
     // TODO replace with fancier sprites
-    Image img1;
-    Image img2;
+    Image imgCol1;
+    Image imgCol2;
+    Image imgCol3;
 
     public Button noButton;
+    public Button priButton;
     public Button yesButton;
     public TextMeshProUGUI title;
 
@@ -49,8 +51,9 @@ public class FormButton : MonoBehaviour
     void Start()
     {
         state = FormButtonState.Unknown;
-        img1 = noButton.gameObject.GetComponent<Image>();
-        img2 = yesButton.gameObject.GetComponent<Image>();
+        imgCol1 = noButton.gameObject.GetComponent<Image>();
+        imgCol2 = priButton.gameObject.GetComponent<Image>();
+        imgCol3 = yesButton.gameObject.GetComponent<Image>();
 
         updatedConstraint += (_,__,f) => { };
     }
@@ -82,7 +85,7 @@ public class FormButton : MonoBehaviour
             if (yesTicked)
             {
                 state = FormButtonState.Confirmed;
-                buttonInGroupConfirmed(true);
+                buttonInGroupConfirmed(true, false);
             }
             else
             {
@@ -94,10 +97,10 @@ public class FormButton : MonoBehaviour
                 {
                     state = FormButtonState.Unknown;
                 }
-                buttonInGroupConfirmed(false);
+                buttonInGroupConfirmed(false, false);
             }
 
-            updateConstraintForButton();
+            updateConstraintForButton(false);
         }
     }
 
@@ -112,38 +115,66 @@ public class FormButton : MonoBehaviour
             if (noTicked && state != FormButtonState.Confirmed)
             {
                 state = FormButtonState.Eliminated;
-                updateConstraintForButton();
+                updateConstraintForButton(false);
             }
             else if (!noTicked)
             {
                 state = FormButtonState.Unknown;
-                updateConstraintForButton();
+                updateConstraintForButton(false);
             }
         }
     }
 
     /// <summary>
+    /// Guarantee this constraint is correct
+    /// </summary>
+    public void confirmThroughCard()
+    {
+        state = FormButtonState.Confirmed;
+        buttonInGroupConfirmed(true, true);
+        updateConstraintForButton(true);
+        yesTicked = true;
+        acceptingInput = false;
+        locked = true;
+    }
+
+    /// <summary>
+    /// Guarantee this constraint is incorrect
+    /// </summary>
+    public void eliminateThroughCard()
+    {
+        state = FormButtonState.Eliminated;
+        updateConstraintForButton(true);
+        noTicked = true;
+        acceptingInput = false;
+        locked = true;
+    }
+
+    /// <summary>
     /// Given the new state of the FormButton, how should we draw it?
     /// </summary>
-    private void updateConstraintForButton()
+    private void updateConstraintForButton(bool withCertainty)
     {
         if(!locked)
         {
             // Adjust draws
             if (state == FormButtonState.Confirmed)
             {
-                img1.color = Color.white;
-                img2.color = Color.green;
+                imgCol1.sprite = withCertainty ? RosterForm.instance.getFormSprite("dyi") : RosterForm.instance.getFormSprite("myi");
+                imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dyi") : RosterForm.instance.getFormSprite("myi");
+                imgCol3.sprite = withCertainty ? RosterForm.instance.getFormSprite("dy") : RosterForm.instance.getFormSprite("my");
             }
             else if (state == FormButtonState.Eliminated)
             {
-                img2.color = Color.white;
-                img1.color = Color.red;
+                imgCol1.sprite = withCertainty ? RosterForm.instance.getFormSprite("dn") : RosterForm.instance.getFormSprite("mn");
+                imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dni") : RosterForm.instance.getFormSprite("mni");
+                imgCol3.sprite = withCertainty ? RosterForm.instance.getFormSprite("dni") : RosterForm.instance.getFormSprite("mni");
             }
             else
             {
-                img1.color = Color.white;
-                img2.color = Color.white;
+                imgCol1.sprite = RosterForm.instance.getFormSprite("x");
+                imgCol2.sprite = RosterForm.instance.getFormSprite("x");
+                imgCol3.sprite = RosterForm.instance.getFormSprite("x");
             }
 
             updatedConstraint.Invoke(cpdType, category, state);
@@ -162,8 +193,8 @@ public class FormButton : MonoBehaviour
             {
                 this.state = cc.onTarget ? FormButtonState.Confirmed : FormButtonState.Eliminated;
 
-                if (this.state == FormButtonState.Confirmed) toggleYesButton();
-                else toggleNoButton();
+                if (this.state == FormButtonState.Confirmed) confirmThroughCard();
+                else eliminateThroughCard();
                 locked = true;
             }
         }
@@ -175,25 +206,31 @@ public class FormButton : MonoBehaviour
     /// However we do keep track of whichever ones we'd definitely ruled out before.
     /// That way, if we unconfirm this category, our old eliminations are still in place.
     /// </summary>
-    private void buttonInGroupConfirmed(bool wasConfirmed)
+    private void buttonInGroupConfirmed(bool wasConfirmed, bool withCertainty)
     {
         List<FormButton> buttonsToToggle = partOfGroup.formButtons;
         List<string> buttonsAreOff = new List<string>();
 
         foreach(FormButton b in buttonsToToggle)
         {
-            if (b.category != category)
+            if(!b.locked)
             {
-                b.acceptingInput = !wasConfirmed;
-                b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
-                b.state = b.noTicked ? FormButtonState.Eliminated : FormButtonState.Unknown;
-            }
-            else
-            {
-                b.img1.color = wasConfirmed ? Color.gray : (b.noTicked ? Color.red : Color.white);
-            }
+                if (b.category != category)
+                {
+                    b.acceptingInput = !wasConfirmed;
+                    b.state = b.noTicked ? FormButtonState.Eliminated : FormButtonState.Unknown;
 
-            if (b.noTicked) buttonsAreOff.Add(b.category);
+                    b.imgCol3.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mni") :
+                    (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
+                }
+
+                b.imgCol1.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mn") :
+                        (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
+                b.imgCol2.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mni") :
+                    (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
+
+                if (b.noTicked) buttonsAreOff.Add(b.category);
+            }
         }
         if(!wasConfirmed)
         {

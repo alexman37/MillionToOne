@@ -10,11 +10,17 @@ using TMPro;
 public class UI_Roster : MonoBehaviour
 {
     // How many characters should we display at a time?
-    public const int CHARACTERS_TO_SHOW = 50;
+    public const int CHARACTERS_TO_SHOW = 32;
 
     public static UI_Roster instance;
 
     private Roster roster;
+
+    // Common Mode: Show roster based on information everyone knows
+    // Filtered Mode: Show only characters meeting your constraints in clue form
+    private bool inCommonMode = true;
+    [SerializeField] private Image commonButton;
+    [SerializeField] private Image filteredButton;
 
     //UI components
     public Image rosterWindow;
@@ -77,6 +83,22 @@ public class UI_Roster : MonoBehaviour
         generateAllCharCards();
     }
 
+    public void enableCommonMode()
+    {
+        inCommonMode = true;
+        commonButton.color = Color.yellow;
+        filteredButton.color = Color.gray;
+        roster.withCommonConstraints = true;
+    }
+
+    public void enableFilteredMode()
+    {
+        inCommonMode = false;
+        commonButton.color = Color.gray;
+        filteredButton.color = Color.yellow;
+        roster.withCommonConstraints = false;
+    }
+
     /// <summary>
     /// Show or hide the roster window
     /// </summary>
@@ -109,9 +131,9 @@ public class UI_Roster : MonoBehaviour
     {
         createContainer();
 
-        int entriesPerRow = 10;
-        float startingX = characterCardTemplate.rectTransform.position.x;
-        float startingY = characterCardTemplate.rectTransform.position.y - 100;
+        int entriesPerRow = 8;
+        float startingX = characterCardTemplate.rectTransform.position.x + 20;
+        float startingY = characterCardTemplate.rectTransform.position.y;
         float cardWidth = characterCardTemplate.rectTransform.rect.width;
         float cardHeight = characterCardTemplate.rectTransform.rect.height;
         float cardOffsetW = cardWidth / 10f;

@@ -30,6 +30,11 @@ public class Roster
 
     private int targetId; // the ID of the person everyone wants to find
 
+    // You can sort the roster by common constraints that all players have, or just your own.
+    public RosterConstraints commonConstraints = new RosterConstraints();
+    public bool withCommonConstraints = true;
+
+    // Actions
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
     public static event Action clearAllConstraints;
@@ -98,6 +103,9 @@ public class Roster
             }
         }
 
+        // Build common constraints
+        commonConstraints.clearAllConstraints();
+
         simulatedCurrentRosterSize = simulatedTotalRosterSize;
 
         createRoster();
@@ -159,7 +167,17 @@ public class Roster
     /// </summary>
     public void redrawRosterVis()
     {
-        applyConstraints(PlayerAgent.instance.rosterConstraints);
+        RosterConstraints currConstraints;
+        if (withCommonConstraints)
+        {
+            currConstraints = commonConstraints;
+        } else
+        {
+            currConstraints = PlayerAgent.instance.rosterConstraints;
+        }
+
+        applyConstraints(currConstraints);
+        
         List<Character> newShownRoster = new List<Character>();
         int size = Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, simulatedCurrentRosterSize);
 
@@ -168,7 +186,7 @@ public class Roster
         currentRosterIDs.Clear();
         for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, shownRoster.Count) && count < size; i++)
         {
-            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, PlayerAgent.instance.rosterConstraints))
+            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, currConstraints))
             {
                 currentRosterIDs.Add(shownRoster[i].simulatedId);
                 newShownRoster.Add(shownRoster[i]);
@@ -183,7 +201,7 @@ public class Roster
         shownRoster = newShownRoster;
         for (int i = count; i < size; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(PlayerAgent.instance.rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
+            int simId = SimulatedID.getRandomSimulatedID(currConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
             shownRoster.Add(new Character(i, simId));
 
@@ -503,6 +521,14 @@ public class RosterConstraints
         {
             //Debug.LogWarning($"Setting up constraints for {onType}");
             allCurrentConstraints.Add(onType, new HashSet<string>());
+        }
+    }
+
+    public void clearAllConstraints()
+    {
+        foreach (CPD cpd in Roster.cpdConstrainables)
+        {
+            clearConstraints(cpd);
         }
     }
 }

@@ -100,7 +100,7 @@ public class TurnDriver : MonoBehaviour
         // Shuffle in place
         generalDeck = Utility.Shuffle<Card>(generalDeck);
 
-        roundSetup();
+        StartCoroutine(roundSetup());
     }
 
     // Give a card from the deck to an agent
@@ -119,9 +119,19 @@ public class TurnDriver : MonoBehaviour
     }
 
 
-    public void roundSetup()
+    // TODO: Animations and stuff
+    private IEnumerator roundSetup()
     {
-        // Generate and Shuffle general deck
+        yield return new WaitForSeconds(3);
+
+        // Distribute the cards to all players.
+        int agentIndex = 0;
+        for(int i = 0; i < generalDeck.Count; i++)
+        {
+            agentsInOrder[agentIndex].startingDealtCard(generalDeck[i]);
+            agentIndex = (agentIndex + 1) % agentsInOrder.Count;
+            yield return null;
+        }
 
         currTurn = 0;
         agentsInOrder[0].markAsReady();

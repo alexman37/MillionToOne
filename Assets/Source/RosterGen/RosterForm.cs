@@ -17,6 +17,17 @@ public class RosterForm : MonoBehaviour
     CPD[] formFields; // the list of form fields. There should be one for each CONSTRAINABLE CPD.
                       // (other CPDs can exist and be irrelevant in terms of sorting - such as face.)
 
+    // form buttons
+    [SerializeField] private Sprite unfilled;
+    [SerializeField] private Sprite manualNo;
+    [SerializeField] private Sprite manualNoImplied;
+    [SerializeField] private Sprite manualYes;
+    [SerializeField] private Sprite manualYesImplied;
+    [SerializeField] private Sprite definiteNo;
+    [SerializeField] private Sprite definiteNoImplied;
+    [SerializeField] private Sprite definiteYes;
+    [SerializeField] private Sprite definiteYesImplied;
+
     // Related to asking around
     [SerializeField] private TextMeshProUGUI formTitle;
     [SerializeField] private GameObject askAroundCommands;
@@ -119,5 +130,26 @@ public class RosterForm : MonoBehaviour
     {
         PlayerAgent.instance.askAgent(TurnDriver.instance.agentsInOrder[agentToAsk], askingFor);
         StoppedAskingAround();
+    }
+
+
+
+
+
+
+    public Sprite getFormSprite(string typeOf)
+    {
+        switch(typeOf)
+        {
+            case "mn": return manualNo;
+            case "my": return manualYes;
+            case "mni": return manualNoImplied;
+            case "myi": return manualYesImplied;
+            case "dn": return definiteNo;
+            case "dy": return definiteYes;
+            case "dni": return definiteNoImplied;
+            case "dyi": return definiteYesImplied;
+            default: return unfilled;
+        }
     }
 }

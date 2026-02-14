@@ -43,6 +43,17 @@ public class PlayerAgent : Agent
         Debug.Log("It's the player's turn.");
     }
 
+    public override int startingDealtCard(Card card)
+    {
+        inventory.Add(card);
+        playerGotCard.Invoke(card, inventory.Count);
+
+        updateConstraintsFromCard(card);
+        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
+        return inventory.Count;
+    }
+
     public override int acquireCard(Card card)
     {
         inventory.Add(card);

@@ -23,6 +23,11 @@ public abstract class Agent
     public abstract void markAsReady();
 
     /// <summary>
+    /// Give the agent a card in the initial deal
+    /// </summary>
+    public abstract int startingDealtCard(Card card);
+
+    /// <summary>
     /// Give the agent a card.
     /// Return the number of cards in hand afterwards
     /// </summary>

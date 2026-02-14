@@ -32,6 +32,17 @@ public class CPUAgent : Agent
         deleteMe();
     }
 
+    public override int startingDealtCard(Card card)
+    {
+        inventory.Add(card);
+        cpuGotCard.Invoke(id, card, inventory.Count);
+
+        updateConstraintsFromCard(card);
+        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
+        return inventory.Count;
+    }
+
     public override int acquireCard(Card card)
     {
         inventory.Add(card);
@@ -97,7 +108,7 @@ public class CPUAgent : Agent
     // TODO REMOVE ALL
     private void deleteMe()
     {
-        TurnDriver.instance.acquireCard(this);
+        Debug.LogWarning("CPU Turn not implemented yet");
 
         cpuTurnOver.Invoke();
     }

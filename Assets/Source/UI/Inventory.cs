@@ -39,12 +39,11 @@ public class Inventory : MonoBehaviour
         PhysicalCard pc = newCard.GetComponent<PhysicalCard>();
         pc.setData(data);
 
-        pc.initialize();
-
         int cardCount = PlayerAgent.instance.getCardsCount();
 
         pc.transform.parent = this.transform;
         pc.transform.localPosition = new Vector3(cardCount * 50, 0, -1 * cardCount);
+        pc.initialize();
         // TODO set position
     }
 }
