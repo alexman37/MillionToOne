@@ -15,6 +15,8 @@ public abstract class Agent
 
     public RosterConstraints rosterConstraints;
 
+    public static event Action<CPD_Type, string, bool> targetCharacteristicGuess = (_,__,b) => { };
+
     public bool isPlayer = false;
 
     /// <summary>
@@ -56,11 +58,42 @@ public abstract class Agent
     public abstract void askAgent(Agent asking, List<(CPD_Type, string)> inquiry);
 
     /// <summary>
+    /// Guess one of the target's characteristics for rewards
+    /// </summary>
+    public void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
+    {
+        if(wasCorrect)
+        {
+            targetCharacteristicGuess.Invoke(cpdType, cat, wasCorrect);
+        }
+    }
+
+    public virtual void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
+    {
+        if (wasCorrect)
+        {
+            rosterConstraints.onlyConstraint(cpdType, cat);
+        }
+        else
+        {
+            rosterConstraints.addConstraint(cpdType, cat);
+        }
+    }
+
+    /// <summary>
     /// Agent uses their special ability
     /// </summary>
     public abstract void useAbility();
 
-    public abstract void clearConstraints();
+    public virtual void clearConstraints()
+    {
+        // "Clear" also serves as initialization for the constraints lists if need be
+        rosterConstraints = new RosterConstraints();
+        foreach (CPD cpd in Roster.cpdConstrainables)
+        {
+            rosterConstraints.clearConstraints(cpd);
+        }
+    }
 
     public int getCardsCount()
     {

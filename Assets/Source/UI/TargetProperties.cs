@@ -41,7 +41,7 @@ public class TargetProperties : MonoBehaviour
 
             next.transform.localPosition = defaultTargetPosition + new Vector3(2 * i, 0, 0);
             TargetCard tc = next.GetComponentInChildren<TargetCard>();
-            tc.initialize(i+1, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType));
+            tc.initialize(i, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType));
 
             targetCards.Add(tc);
         }

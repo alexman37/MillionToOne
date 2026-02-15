@@ -20,12 +20,14 @@ public class CPUAgent : Agent
 
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
+        Agent.targetCharacteristicGuess += onTargetCardRevealed;
     }
 
     ~CPUAgent()
     {
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
+        Agent.targetCharacteristicGuess -= onTargetCardRevealed;
     }
 
     public override void markAsReady()
@@ -82,19 +84,21 @@ public class CPUAgent : Agent
 
     }
 
-    public override void useAbility()
+    public void guessTargetCharacteristic(CPD_Type cpdType, string cat)
     {
 
     }
 
-    public override void clearConstraints()
+    public override void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
     {
-        // "Clear" also serves as initialization for the constraints lists if need be
-        rosterConstraints = new RosterConstraints();
-        foreach (CPD cpd in Roster.cpdConstrainables)
-        {
-            rosterConstraints.clearConstraints(cpd);
-        }
+        base.onTargetCardRevealed(cpdType, cat, wasCorrect);
+
+        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+    }
+
+    public override void useAbility()
+    {
+
     }
 
     // CPU handles their constraints locally.

@@ -14,6 +14,7 @@ public class PlayerAgent : Agent
     public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
 
+
     // Singleton. Do not allow more than one
     public PlayerAgent()
     {
@@ -32,12 +33,16 @@ public class PlayerAgent : Agent
 
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
+        TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
+        Agent.targetCharacteristicGuess += onTargetCardRevealed;
     }
 
     ~PlayerAgent()
     {
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
+        TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
+        Agent.targetCharacteristicGuess -= onTargetCardRevealed;
     }
 
     public override void markAsReady()
@@ -108,19 +113,39 @@ public class PlayerAgent : Agent
         }
     }
 
+    public void guessTargetCharacteristic(CPD_Type cpdType, string cat)
+    {
+        if (TurnDriver.instance.currentRoster.targetHasProperty(cpdType, cat))
+        {
+            base.guessTargetCharacteristic(cpdType, cat, true);
+
+            // Success! Everyone knows it now, but you get cool rewards
+            Debug.Log("You were correct");
+
+            playerTurnOver.Invoke();
+        }
+
+        else
+        {
+            // Fail - everyone else knows what you guessed is not it, and your turn is over
+            Debug.Log("Not right");
+
+            base.guessTargetCharacteristic(cpdType, cat, false);
+
+            playerTurnOver.Invoke();
+        }
+    }
+
+    public override void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
+    {
+        base.onTargetCardRevealed(cpdType, cat, wasCorrect);
+        
+        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+    }
+
     public override void useAbility()
     {
 
-    }
-
-    public override void clearConstraints()
-    {
-        // "Clear" also serves as initialization for the constraints lists if need be
-        rosterConstraints = new RosterConstraints();
-        foreach (CPD cpd in Roster.cpdConstrainables)
-        {
-            rosterConstraints.clearConstraints(cpd);
-        }
     }
 
     // CPU handles their constraints locally.

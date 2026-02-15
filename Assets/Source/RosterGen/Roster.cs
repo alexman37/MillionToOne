@@ -29,6 +29,7 @@ public class Roster
     protected static List<int> simIDtourGuide; // the first CPD should be multiplied by index 0...the second by index 1...etc. to get sim ID.
 
     private int targetId; // the ID of the person everyone wants to find
+    private Character targetAsChar;
 
     // You can sort the roster by common constraints that all players have, or just your own.
     public RosterConstraints commonConstraints = new RosterConstraints();
@@ -154,6 +155,7 @@ public class Roster
         savedMod = 0;
 
         targetId = UnityEngine.Random.Range(0, simulatedTotalRosterSize - 1);
+        targetAsChar = new Character(-1, targetId);
 
         rosterReady.Invoke();
     }
@@ -194,7 +196,12 @@ public class Roster
     /// </summary>
     public Character getTargetAsCharacter()
     {
-        return new Character(-1, targetId);
+        return targetAsChar;
+    }
+
+    public bool targetHasProperty(CPD_Type cpdType, string cat)
+    {
+        return targetAsChar.getCategoryofCharacteristic(cpdType) == cat;
     }
 
 
@@ -501,6 +508,7 @@ public class RosterConstraints
 {
     // What CPD type are you restricting, and, what categories in that CPD are you allowing?
     public Dictionary<CPD_Type, HashSet<string>> allCurrentConstraints;
+
     private object lockObj = new object();
 
     public RosterConstraints()
@@ -510,10 +518,11 @@ public class RosterConstraints
 
     /// <summary>
     /// Adds a category to the constrained list for a particular CPD (do not accept this category.)
+    /// Set inflexible to true if this is 100% confirmed and should never be changed the rest of the round.
     /// </summary>
     /// <param name="cpd">CPD to constrain (EG HairStyle, HairColor...)</param>
     /// <param name="constraint">This category will no longer be accepted</param>
-    public void addConstraint(CPD_Type onType, string constraint)
+    public void addConstraint(CPD_Type onType, string constraint, bool inflexible)
     {
         lock(lockObj)
         {
@@ -587,3 +596,25 @@ public class RosterConstraints
 // ----------------------------------------------------------
 // For CPU's version of RosterConstraints, see the file CPURosterLogic
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+public class RosterConstraintEntry
+{
+    public string content;
+    public bool inflexible;
+
+    public override bool Equals(object obj)
+    {
+        if(obj is RosterConstraintEntry)
+        {
+            return (obj as RosterConstraintEntry).content == content;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return content.GetHashCode();
+    }
+}

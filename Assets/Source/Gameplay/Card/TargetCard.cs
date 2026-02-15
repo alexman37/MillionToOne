@@ -12,6 +12,8 @@ public class TargetCard : MonoBehaviour
     [SerializeField] private TextMeshProUGUI category;
     [SerializeField] private Sprite pic;
 
+    private CPD_Type cpdType;
+
     [SerializeField] private Image selectedSpr;
 
     private bool revealed;
@@ -22,12 +24,36 @@ public class TargetCard : MonoBehaviour
         
     }
 
+    private void OnEnable()
+    {
+        Agent.targetCharacteristicGuess += RevealToAll;
+    }
+
+    private void OnDisable()
+    {
+        Agent.targetCharacteristicGuess -= RevealToAll;
+    }
+
     public void initialize(int num, string title, string cat)
     {
-        cpdNum.text = num.ToString();
+        cpdNum.text = (num + 1).ToString();
         cpdTitle.text = title;
         category.text = cat;
+
+        cpdType = Roster.cpdConstrainables[num].cpdType;
     }
+
+
+    // When it's correctly guessed, reveal it to all players (and prevent future action)
+    public void RevealToAll(CPD_Type cpdType, string _, bool wasCorrect)
+    {
+        if (wasCorrect && cpdType == this.cpdType)
+        {
+            transform.parent.localRotation = Quaternion.Euler(0, 0, 0);
+            revealed = true;
+        }
+    }
+
 
     public void OnMouseEnter()
     {
@@ -44,6 +70,9 @@ public class TargetCard : MonoBehaviour
 
     public void OnMouseDown()
     {
-        Debug.Log("Attempted to guess target card");
+        if(!revealed)
+        {
+            PopupCanvas.instance.popup_targetPropertyGuess(cpdType);
+        }
     }
 }
