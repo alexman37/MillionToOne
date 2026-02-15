@@ -40,7 +40,7 @@ public class TargetProperties : MonoBehaviour
             GameObject next = GameObject.Instantiate(targetCardTemplate, transform);
 
             next.transform.localPosition = defaultTargetPosition + new Vector3(2 * i, 0, 0);
-            TargetCard tc = next.GetComponent<TargetCard>();
+            TargetCard tc = next.GetComponentInChildren<TargetCard>();
             tc.initialize(i+1, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType));
 
             targetCards.Add(tc);
