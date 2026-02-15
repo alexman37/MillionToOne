@@ -70,6 +70,14 @@ public class Character
     }
 
     /// <summary>
+    /// Get the Category name of a characteristic
+    /// </summary>
+    public string getCategoryofCharacteristic(CPD_Type characteristic)
+    {
+        return createdCharacteristics[characteristic].category;
+    }
+
+    /// <summary>
     /// Gets the filepath value from a CPD assumed to be a filepath
     /// </summary>
     public string getFilePath(CPD_Type cpdType)

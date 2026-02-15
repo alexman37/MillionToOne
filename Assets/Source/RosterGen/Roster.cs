@@ -189,6 +189,14 @@ public class Roster
         return SimulatedID.unpackSimulatedID(targetId);
     }
 
+    /// <summary>
+    /// Return a list of the target as a Character instance
+    /// </summary>
+    public Character getTargetAsCharacter()
+    {
+        return new Character(-1, targetId);
+    }
+
 
     /// <summary>
     /// Redraw the roster with new characters meeting constraints
