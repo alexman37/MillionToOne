@@ -9,8 +9,10 @@ using TMPro;
 /// </summary>
 public class PhysicalCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    // TODO replace with a picture eventually
-    [SerializeField] private TextMeshProUGUI text;
+    [SerializeField] private TextMeshProUGUI cpdNum;
+    [SerializeField] private TextMeshProUGUI cpdTitle;
+    [SerializeField] private TextMeshProUGUI categoryText;
+
     private Vector3 normalPosition;
     private Vector3 raisedPosition;
 
@@ -19,7 +21,18 @@ public class PhysicalCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHa
     // You must ensure the card component is created first, so we can't throw this in start
     public void initialize()
     {
-        text.text = data.ToString();
+        if(data.cardType == CardType.CLUE)
+        {
+            ClueCard cc = data as ClueCard;
+            cpdNum.text = ((int)cc.cpdType + 1).ToString();
+            cpdTitle.text = cc.cpdType.ToString();
+            categoryText.text = cc.category;
+        } else
+        {
+
+        }
+        
+
         normalPosition = transform.localPosition;
         raisedPosition = new Vector3(normalPosition.x, normalPosition.y + transform.localScale.y / 2, -50);
         Debug.Log(normalPosition);

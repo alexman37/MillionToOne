@@ -20,7 +20,6 @@ public class ClueCard : Card
 
     public static event Action<ClueCard> clueCardDeclassified;
 
-
     public ClueCard(CPD_Type cpdType, string cat, bool onTarget)
     {
         cardType = CardType.CLUE;
