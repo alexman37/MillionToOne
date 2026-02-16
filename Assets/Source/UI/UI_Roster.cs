@@ -153,6 +153,8 @@ public class UI_Roster : MonoBehaviour
             newCard.rectTransform.localScale = Vector3.one;
             newCard.gameObject.SetActive(true);
 
+            newCard.gameObject.GetComponent<CharacterCard>().characterId = c.simulatedId;
+
             roster.shownRosterSprites[i].name = i.ToString();
             // TODO would it be better as a sprite renderer???
             newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.shownRosterSprites[i];
@@ -181,6 +183,8 @@ public class UI_Roster : MonoBehaviour
                 roster.shownRosterSprites[i].name = i.ToString();
                 // TODO would it be better as a sprite renderer???
                 newCard.transform.GetChild(0).GetComponent<Image>().sprite = roster.shownRosterSprites[i];
+
+                newCard.gameObject.GetComponent<CharacterCard>().characterId = c.simulatedId;
 
                 //set portrait and name
                 newCard.GetComponentInChildren<TextMeshProUGUI>().text = c.getDisplayName(true) + "\n (" + roster.shownRoster[i].simulatedId + ")";

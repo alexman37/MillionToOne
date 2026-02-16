@@ -72,6 +72,11 @@ public abstract class Agent
     }
 
     /// <summary>
+    /// Guess one of the target's characteristics for rewards
+    /// </summary>
+    public abstract void guessTarget(int characterId, bool correct);
+
+    /// <summary>
     /// Agent uses their special ability
     /// </summary>
     public abstract void useAbility();

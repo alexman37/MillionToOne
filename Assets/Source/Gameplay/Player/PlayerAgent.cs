@@ -34,6 +34,7 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
+        CharacterCard.charCardClicked += guessTarget;
     }
 
     ~PlayerAgent()
@@ -41,6 +42,7 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
+        CharacterCard.charCardClicked -= guessTarget;
     }
 
     public override void markAsReady()
@@ -130,6 +132,20 @@ public class PlayerAgent : Agent
         }
 
         playerTurnOver.Invoke();
+    }
+
+    public override void guessTarget(int characterId, bool correct)
+    {
+        // TODO obv. gotta do more than just click/respond
+        if(correct)
+        {
+            Debug.Log("YOU WIN!");
+            // TODO
+        } else
+        {
+            Debug.Log("Wrong guy! Your turn is over");
+            playerTurnOver.Invoke();
+        }
     }
 
     public override void useAbility()

@@ -28,7 +28,7 @@ public class Roster
     protected static List<int> cpdCounts; // optimization for simulated ID unpacking
     protected static List<int> simIDtourGuide; // the first CPD should be multiplied by index 0...the second by index 1...etc. to get sim ID.
 
-    private int targetId; // the ID of the person everyone wants to find
+    public int targetId; // the ID of the person everyone wants to find
     private Character targetAsChar;
 
     // You can sort the roster by common constraints that all players have, or just your own.
@@ -570,9 +570,10 @@ public class RosterConstraints
         }
     }
 
-    public void smartClear(CPD_Type onType)
+    private void smartClear(CPD_Type onType)
     {
-        foreach(string cat in allCurrentConstraints[onType])
+        // can't modify the hashset while it is being used, so have to make a temporary new one.
+        foreach (string cat in new HashSet<string>(allCurrentConstraints[onType]))
         {
             if (!inflexibles.Contains((onType, cat)))
             {

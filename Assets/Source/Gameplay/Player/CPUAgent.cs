@@ -84,10 +84,15 @@ public class CPUAgent : Agent
 
     }
 
-    public new void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
+    public override void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
     {
         base.guessTargetCharacteristic(cpdType, cat, wasCorrect);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+    }
+
+    public override void guessTarget(int characterId, bool correct)
+    {
+        
     }
 
     public override void useAbility()
