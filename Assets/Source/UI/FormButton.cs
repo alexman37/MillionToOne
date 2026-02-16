@@ -61,6 +61,7 @@ public class FormButton : MonoBehaviour
     private void OnEnable()
     {
         PlayerAgent.playerGotCard += updateConstraintFromCard;
+        TargetCharGuess.playerGuessesTargetProperty += updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent += askAroundForAgent;
         AgentDisplay.deselectedAgent += stopAskingAround;
         RosterForm.completedAskAround += stopAskingAround;
@@ -69,6 +70,7 @@ public class FormButton : MonoBehaviour
     private void OnDisable()
     {
         PlayerAgent.playerGotCard -= updateConstraintFromCard;
+        TargetCharGuess.playerGuessesTargetProperty -= updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent -= askAroundForAgent;
         AgentDisplay.deselectedAgent -= stopAskingAround;
         RosterForm.completedAskAround -= stopAskingAround;
@@ -182,7 +184,7 @@ public class FormButton : MonoBehaviour
     }
 
     /// <summary>
-    /// Update constraints from somewhere else
+    /// Update form constraints from receiving a card
     /// </summary>
     private void updateConstraintFromCard(Card card, int _)
     {
@@ -198,7 +200,20 @@ public class FormButton : MonoBehaviour
                 locked = true;
             }
         }
-        
+    }
+
+    /// <summary>
+    /// Update form constraints from a target card being guessed on (correctly or not)
+    /// </summary>
+    private void updateConstraintFromTargetGuess(CPD_Type cpdType, string cat, bool wasCorrect)
+    {
+        if (this.cpdType == cpdType && this.category == cat)
+        {
+            // Correct choice: Update everything
+            if (wasCorrect) confirmThroughCard();
+            else eliminateThroughCard();
+            locked = true;
+        }
     }
 
     /// <summary>

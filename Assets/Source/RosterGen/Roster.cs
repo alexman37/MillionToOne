@@ -107,7 +107,7 @@ public class Roster
         }
 
         // Build common constraints
-        commonConstraints.clearAllConstraints();
+        commonConstraints.clearAllConstraints(true);
 
         simulatedCurrentRosterSize = simulatedTotalRosterSize;
 
@@ -175,7 +175,7 @@ public class Roster
 
     public void onClueCardDeclassified(ClueCard cc)
     {
-        commonConstraints.addConstraint(cc.cpdType, cc.category);
+        commonConstraints.addConstraint(cc.cpdType, cc.category, false);
         if(withCommonConstraints)
         {
             redrawRosterVis();
@@ -294,10 +294,10 @@ public class Roster
     public void reInitializeVariants(CPD_Type onType, List<string> buttonsAreOff)
     {
         CPD cpd = cpdByType[onType];
-        PlayerAgent.instance.rosterConstraints.clearConstraints(cpd);
+        PlayerAgent.instance.rosterConstraints.clearConstraints(cpd, false);
         foreach(string exclude in buttonsAreOff)
         {
-            PlayerAgent.instance.rosterConstraints.addConstraint(cpd.cpdType, exclude);
+            PlayerAgent.instance.rosterConstraints.addConstraint(cpd.cpdType, exclude, false);
         }
     }
 
@@ -508,12 +508,14 @@ public class RosterConstraints
 {
     // What CPD type are you restricting, and, what categories in that CPD are you allowing?
     public Dictionary<CPD_Type, HashSet<string>> allCurrentConstraints;
+    private HashSet<(CPD_Type, string)> inflexibles;
 
     private object lockObj = new object();
 
     public RosterConstraints()
     {
         this.allCurrentConstraints = new Dictionary<CPD_Type, HashSet<string>>();
+        this.inflexibles = new HashSet<(CPD_Type, string)>();
     }
 
     /// <summary>
@@ -526,7 +528,10 @@ public class RosterConstraints
     {
         lock(lockObj)
         {
-            allCurrentConstraints[onType].Add(constraint);
+            if(!inflexibles.Contains((onType, constraint))) {
+                allCurrentConstraints[onType].Add(constraint);
+                if (inflexible) inflexibles.Add((onType, constraint));
+            }
         }
     }
 
@@ -539,7 +544,10 @@ public class RosterConstraints
     {
         lock(lockObj)
         {
-            allCurrentConstraints[onType].Remove(constraint);
+            if(!inflexibles.Contains((onType, constraint)))
+            {
+                allCurrentConstraints[onType].Remove(constraint);
+            }
         }
     }
 
@@ -550,11 +558,26 @@ public class RosterConstraints
     /// <param name="constraint">Restricts everything but this category</param>
     public void onlyConstraint(CPD_Type onType, string constraint)
     {
-        lock(lockObj)
+        lock (lockObj)
         {
             allCurrentConstraints[onType].Clear();
-            Roster.cpdByType[onType].categories.ForEach(cat => allCurrentConstraints[onType].Add(cat));
+            Roster.cpdByType[onType].categories.ForEach(cat =>
+            {
+
+                allCurrentConstraints[onType].Add(cat);
+            });
             allCurrentConstraints[onType].Remove(constraint);
+        }
+    }
+
+    public void smartClear(CPD_Type onType)
+    {
+        foreach(string cat in allCurrentConstraints[onType])
+        {
+            if (!inflexibles.Contains((onType, cat)))
+            {
+                allCurrentConstraints[onType].Remove(cat);
+            }
         }
     }
 
@@ -562,14 +585,17 @@ public class RosterConstraints
     /// Removes all constraints from a CPD (all categories will be allowed again)
     /// </summary>
     /// <param name="cpd">Clear all constraints from this CPD</param>
-    public void clearConstraints(CPD cpd)
+    public void clearConstraints(CPD cpd, bool cleanSweep)
     {
         lock(lockObj)
         {
             CPD_Type onType = cpd.cpdType;
             if (allCurrentConstraints.ContainsKey(onType))
             {
-                allCurrentConstraints[onType].Clear();
+                if (cleanSweep)
+                    allCurrentConstraints[onType].Clear();
+                else
+                    smartClear(onType);
             }
 
             else
@@ -580,13 +606,13 @@ public class RosterConstraints
         }
     }
 
-    public void clearAllConstraints()
+    public void clearAllConstraints(bool cleanSweep)
     {
         lock(lockObj)
         {
             foreach (CPD cpd in Roster.cpdConstrainables)
             {
-                clearConstraints(cpd);
+                clearConstraints(cpd, cleanSweep);
             }
         }
     }
@@ -596,25 +622,3 @@ public class RosterConstraints
 // ----------------------------------------------------------
 // For CPU's version of RosterConstraints, see the file CPURosterLogic
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-
-public class RosterConstraintEntry
-{
-    public string content;
-    public bool inflexible;
-
-    public override bool Equals(object obj)
-    {
-        if(obj is RosterConstraintEntry)
-        {
-            return (obj as RosterConstraintEntry).content == content;
-        }
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return content.GetHashCode();
-    }
-}

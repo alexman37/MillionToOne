@@ -26,12 +26,12 @@ public class TargetCard : MonoBehaviour
 
     private void OnEnable()
     {
-        Agent.targetCharacteristicGuess += RevealToAll;
+        TargetCharGuess.playerGuessesTargetProperty += RevealToAll;
     }
 
     private void OnDisable()
     {
-        Agent.targetCharacteristicGuess -= RevealToAll;
+        TargetCharGuess.playerGuessesTargetProperty -= RevealToAll;
     }
 
     public void initialize(int num, string title, string cat)

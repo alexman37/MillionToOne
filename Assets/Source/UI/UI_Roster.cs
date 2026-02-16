@@ -211,7 +211,7 @@ public class UI_Roster : MonoBehaviour
                 PlayerAgent.instance.rosterConstraints.removeConstraint(cpdType, value);
                 break;
             case FormButtonState.Eliminated:
-                PlayerAgent.instance.rosterConstraints.addConstraint(cpdType, value);
+                PlayerAgent.instance.rosterConstraints.addConstraint(cpdType, value, false);
                 break;
             case FormButtonState.Confirmed:
                 PlayerAgent.instance.rosterConstraints.onlyConstraint(cpdType, value);

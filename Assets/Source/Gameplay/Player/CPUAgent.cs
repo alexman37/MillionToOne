@@ -20,14 +20,14 @@ public class CPUAgent : Agent
 
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
-        Agent.targetCharacteristicGuess += onTargetCardRevealed;
+        TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
     }
 
     ~CPUAgent()
     {
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
-        Agent.targetCharacteristicGuess -= onTargetCardRevealed;
+        TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
     }
 
     public override void markAsReady()
@@ -84,15 +84,9 @@ public class CPUAgent : Agent
 
     }
 
-    public void guessTargetCharacteristic(CPD_Type cpdType, string cat)
+    public new void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
     {
-
-    }
-
-    public override void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
-    {
-        base.onTargetCardRevealed(cpdType, cat, wasCorrect);
-
+        base.guessTargetCharacteristic(cpdType, cat, wasCorrect);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
     }
 
@@ -113,7 +107,7 @@ public class CPUAgent : Agent
                 rosterConstraints.onlyConstraint(cc.cpdType, cc.category);
             } else
             {
-                rosterConstraints.addConstraint(cc.cpdType, cc.category);
+                rosterConstraints.addConstraint(cc.cpdType, cc.category, true);
             }
         }
     }

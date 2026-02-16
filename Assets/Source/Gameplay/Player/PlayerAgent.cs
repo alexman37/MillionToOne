@@ -34,7 +34,6 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
-        Agent.targetCharacteristicGuess += onTargetCardRevealed;
     }
 
     ~PlayerAgent()
@@ -42,7 +41,6 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
-        Agent.targetCharacteristicGuess -= onTargetCardRevealed;
     }
 
     public override void markAsReady()
@@ -113,34 +111,25 @@ public class PlayerAgent : Agent
         }
     }
 
-    public void guessTargetCharacteristic(CPD_Type cpdType, string cat)
+    public override void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
     {
-        if (TurnDriver.instance.currentRoster.targetHasProperty(cpdType, cat))
-        {
-            base.guessTargetCharacteristic(cpdType, cat, true);
+        base.guessTargetCharacteristic(cpdType, cat, wasCorrect);
 
+        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
+        if (wasCorrect)
+        {
             // Success! Everyone knows it now, but you get cool rewards
             Debug.Log("You were correct");
-
-            playerTurnOver.Invoke();
         }
 
         else
         {
             // Fail - everyone else knows what you guessed is not it, and your turn is over
             Debug.Log("Not right");
-
-            base.guessTargetCharacteristic(cpdType, cat, false);
-
-            playerTurnOver.Invoke();
         }
-    }
 
-    public override void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
-    {
-        base.onTargetCardRevealed(cpdType, cat, wasCorrect);
-        
-        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        playerTurnOver.Invoke();
     }
 
     public override void useAbility()
@@ -161,7 +150,7 @@ public class PlayerAgent : Agent
             }
             else
             {
-                rosterConstraints.addConstraint(cc.cpdType, cc.category);
+                rosterConstraints.addConstraint(cc.cpdType, cc.category, true);
             }
         }
     }

@@ -15,9 +15,8 @@ public abstract class Agent
 
     public RosterConstraints rosterConstraints;
 
-    public static event Action<CPD_Type, string, bool> targetCharacteristicGuess = (_,__,b) => { };
-
     public bool isPlayer = false;
+
 
     /// <summary>
     /// It's your turn.
@@ -60,15 +59,7 @@ public abstract class Agent
     /// <summary>
     /// Guess one of the target's characteristics for rewards
     /// </summary>
-    public void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
-    {
-        if(wasCorrect)
-        {
-            targetCharacteristicGuess.Invoke(cpdType, cat, wasCorrect);
-        }
-    }
-
-    public virtual void onTargetCardRevealed(CPD_Type cpdType, string cat, bool wasCorrect)
+    public virtual void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
     {
         if (wasCorrect)
         {
@@ -76,7 +67,7 @@ public abstract class Agent
         }
         else
         {
-            rosterConstraints.addConstraint(cpdType, cat);
+            rosterConstraints.addConstraint(cpdType, cat, true);
         }
     }
 
@@ -91,7 +82,7 @@ public abstract class Agent
         rosterConstraints = new RosterConstraints();
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
-            rosterConstraints.clearConstraints(cpd);
+            rosterConstraints.clearConstraints(cpd, true);
         }
     }
 
