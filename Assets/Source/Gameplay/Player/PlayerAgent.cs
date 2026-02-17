@@ -31,6 +31,9 @@ public class PlayerAgent : Agent
             Debug.LogWarning("Did not create a second PlayerAgent.");
         }
 
+        rosterConstraints = new RosterConstraints();
+        rosterConstraints.clearAllConstraints(true);
+
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
@@ -106,7 +109,8 @@ public class PlayerAgent : Agent
         CPUAgent cAgent = asking as CPUAgent;
         foreach((CPD_Type, string) category in inquiry)
         {
-            if (cAgent.rosterLogic.HasCardFor(category))
+            // TODO : Update information, end turn
+            if (cAgent.infoTracker.HasCardFor(category))
             {
                 Debug.Log("The asked CPU has: " + category);
             }

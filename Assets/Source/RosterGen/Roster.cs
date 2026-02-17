@@ -55,6 +55,7 @@ public class Roster
     {
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
+        if (clearAllConstraints == null) clearAllConstraints += () => { };
 
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
 
@@ -108,6 +109,7 @@ public class Roster
 
         // Build common constraints
         commonConstraints.clearAllConstraints(true);
+        RosterConstraints.NO_CONSTRAINTS.clearAllConstraints(true);
 
         simulatedCurrentRosterSize = simulatedTotalRosterSize;
 
@@ -136,12 +138,13 @@ public class Roster
         }
 
         clearAllConstraints.Invoke();
-        applyConstraints(PlayerAgent.instance.rosterConstraints);
+        applyConstraints(RosterConstraints.NO_CONSTRAINTS);
 
         // First list generation
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
-            int simId = SimulatedID.getRandomSimulatedID(PlayerAgent.instance.rosterConstraints, currentRosterIDs, simulatedCurrentRosterSize);
+            int simId = SimulatedID.getRandomSimulatedID(RosterConstraints.NO_CONSTRAINTS, currentRosterIDs, simulatedCurrentRosterSize);
+            Debug.Log("SIM ID gen: " + simId);
 
             shownRoster.Add(new Character(i, simId));
 
@@ -506,6 +509,8 @@ public class Roster
 /// </summary>
 public class RosterConstraints
 {
+    public static RosterConstraints NO_CONSTRAINTS = new RosterConstraints();
+
     // What CPD type are you restricting, and, what categories in that CPD are you allowing?
     public Dictionary<CPD_Type, HashSet<string>> allCurrentConstraints;
     private HashSet<(CPD_Type, string)> inflexibles;

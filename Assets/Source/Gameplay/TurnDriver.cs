@@ -30,15 +30,6 @@ public class TurnDriver : MonoBehaviour
         {
             Destroy(this);
         }
-
-        playerAgent = new PlayerAgent();
-        agentsInOrder.Add(playerAgent);
-
-        CPUAgent cpuAgent1 = new CPUAgent(1, "Hazel");
-        agentsInOrder.Add(cpuAgent1);
-
-        CPUAgent cpuAgent2 = new CPUAgent(2, "Winter");
-        agentsInOrder.Add(cpuAgent2);
     }
 
     private void OnEnable()
@@ -57,6 +48,7 @@ public class TurnDriver : MonoBehaviour
     private void onRosterCreation(Roster rost)
     {
         currentRoster = rost;
+        generatePlayers();
         Total_UI.instance.initializeUI(agentsInOrder, rost);
         generateDeck(rost);
     }
@@ -103,20 +95,21 @@ public class TurnDriver : MonoBehaviour
         StartCoroutine(roundSetup());
     }
 
-    // Give a card from the deck to an agent
-    public void acquireCard(Agent agent)
+    private void generatePlayers()
     {
-        Card toGive = generalDeck[0];
-        generalDeck.RemoveAt(0);
+        playerAgent = new PlayerAgent();
+        agentsInOrder.Add(playerAgent);
 
-        agent.acquireCard(toGive);
+        CPUAgent cpuAgent1 = new CPUAgent(1, "Hazel");
+        agentsInOrder.Add(cpuAgent1);
+
+        CPUAgent cpuAgent2 = new CPUAgent(2, "Winter");
+        agentsInOrder.Add(cpuAgent2);
     }
 
-    // Give a card specifically to the player
-    public void playerAcquireCard()
-    {
-        acquireCard(playerAgent);
-    }
+
+
+
 
 
     // TODO: Animations and stuff

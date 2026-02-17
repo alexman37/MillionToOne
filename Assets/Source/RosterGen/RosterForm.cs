@@ -111,6 +111,7 @@ public class RosterForm : MonoBehaviour
 
     public void StoppedAskingAround()
     {
+        askingFor.Clear();
         askAroundCommands.SetActive(false);
         formTitle.text = "CHARACTER SHEET";
         completedAskAround.Invoke();

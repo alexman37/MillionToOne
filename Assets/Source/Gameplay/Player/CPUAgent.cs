@@ -6,8 +6,9 @@ using System;
 public class CPUAgent : Agent
 {
     // Tracks all relevant info this CPU would need to make decisions.
-    // TODO how much do we use constraints, how much roster logic?
-    public CPURosterLogic rosterLogic = new CPURosterLogic();
+    public CPUInfoTracker infoTracker;
+    // Algorithm for deciding what to do on your turn.
+    public CPUAgentLogic agentLogic;
 
     public static event Action<int, Card, int> cpuGotCard = (_,__,n) => { };
     public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
@@ -17,6 +18,12 @@ public class CPUAgent : Agent
     {
         this.id = id;
         agentName = name;
+
+        infoTracker = new CPUInfoTracker();
+        agentLogic = new CPUAgentLogic(this);
+
+        rosterConstraints = new RosterConstraints();
+        rosterConstraints.clearAllConstraints(true);
 
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
@@ -33,7 +40,9 @@ public class CPUAgent : Agent
     public override void markAsReady()
     {
         Debug.Log("It's CPU player " + agentName + "'s turn.");
-        deleteMe();
+
+        // TODO Do the thing with animations...
+        agentLogic.processTurn();
     }
 
     public override int startingDealtCard(Card card)
@@ -41,7 +50,8 @@ public class CPUAgent : Agent
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
 
-        rosterLogic.AddedCardToHand(card);
+        infoTracker.AddedCardToHand(card);
+
         updateConstraintsFromCard(card);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
 
@@ -53,7 +63,8 @@ public class CPUAgent : Agent
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
 
-        rosterLogic.AddedCardToHand(card);
+        infoTracker.AddedCardToHand(card);
+
         updateConstraintsFromCard(card);
 
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
@@ -64,17 +75,26 @@ public class CPUAgent : Agent
 
     public override int acquireCards(List<Card> cards)
     {
-        inventory.AddRange(cards);
-        return inventory.Count;
+        throw new NotImplementedException();
     }
 
     public override void playCard(Card card)
     {
+        // Gameplay result depends on what the card is - clue or action
+        card.play();
 
+        Debug.Log("CPU declassified " + card);
+
+        // For the player, just remove it from their inventory
+        inventory.Remove(card);
+
+        cpuTurnOver.Invoke();
     }
 
     public override void onClueCardDeclassified(ClueCard cc)
     {
+        infoTracker.MarkDefinitive(cc.cpdType, cc.category, cc.onTarget);
+
         updateConstraintsFromCard(cc);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
     }
@@ -118,20 +138,14 @@ public class CPUAgent : Agent
     }
 
 
-    // TODO REMOVE ALL
-    private void deleteMe()
-    {
-        Debug.LogWarning("CPU Turn not implemented yet");
 
+
+
+    // CPU-specific methods
+
+    public void skipTurn()
+    {
+        Debug.Log("Skipping CPU " + agentName + "'s turn.");
         cpuTurnOver.Invoke();
     }
 }
-
-
-
-
-// TODO...
-/*public class CPUAgentLogic
-{
-    
-}*/
