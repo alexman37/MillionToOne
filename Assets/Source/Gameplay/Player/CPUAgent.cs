@@ -19,7 +19,7 @@ public class CPUAgent : Agent
         this.id = id;
         agentName = name;
 
-        infoTracker = new CPUInfoTracker();
+        infoTracker = new CPUInfoTracker(this);
         agentLogic = new CPUAgentLogic(this);
 
         rosterConstraints = new RosterConstraints();
@@ -108,6 +108,16 @@ public class CPUAgent : Agent
     {
         base.guessTargetCharacteristic(cpdType, cat, wasCorrect);
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        if(wasCorrect)
+        {
+            infoTracker.solvedCPDs.Add(cpdType);
+        }
+    }
+
+    public void guessTargetCharacteristic(CPD_Type cpdType, string cat)
+    {
+        bool wasCorrect = TurnDriver.instance.currentRoster.targetHasProperty(cpdType, cat);
+        guessTargetCharacteristic(cpdType, cat, wasCorrect);
     }
 
     public override void guessTarget(int characterId, bool correct)

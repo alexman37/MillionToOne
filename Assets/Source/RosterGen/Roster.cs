@@ -394,7 +394,7 @@ public class Roster
                             workingID += simIDtourGuide[c] * currCpd.getRandomIndex();
                         }
                     }
-                    if (!takenIDs.Contains(workingID))
+                    if (takenIDs == null || !takenIDs.Contains(workingID))
                     {
                         return workingID;
                     }
@@ -435,7 +435,7 @@ public class Roster
                         int aNewModifier = currSimIdModifiers[l];
                         int aNewIndex = aNewModifier + catZeroes;
                         newSimIdModifiers.Add(aNewModifier);
-                        if (!takenIDs.Contains(aNewIndex))
+                        if (takenIDs == null || !takenIDs.Contains(aNewIndex))
                         {
                             return aNewIndex;
                         }
@@ -452,7 +452,7 @@ public class Roster
                             int aNewModifier = mod + currSimIdModifiers[l];
                             int aNewIndex = aNewModifier + catZeroes;
                             newSimIdModifiers.Add(aNewModifier);
-                            if (!takenIDs.Contains(aNewIndex))
+                            if (takenIDs == null || !takenIDs.Contains(aNewIndex))
                             {
                                 return aNewIndex;
                             }
