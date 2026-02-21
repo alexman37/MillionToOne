@@ -31,9 +31,9 @@ public class ClueCard : Card
         //GetComponentInChildren<TextMeshProUGUI>().text = cpdType + ": " + cat;
     }
 
-    public override void acquire()
+    public override void acquire(Agent agent)
     {
-
+        owner = agent;
     }
 
     public override void play()

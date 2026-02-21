@@ -10,7 +10,8 @@ public abstract class Agent
     public Sprite portrait;
 
     public int maxCardCount = 5;
-    public List<Card> inventory = new List<Card>();
+    public List<ClueCard> inventory = new List<ClueCard>();
+    public List<PersonCard> recruits = new List<PersonCard>();
     public AgentAbility ability;
 
     public RosterConstraints rosterConstraints;
@@ -26,7 +27,7 @@ public abstract class Agent
     /// <summary>
     /// Give the agent a card in the initial deal
     /// </summary>
-    public abstract int startingDealtCard(Card card);
+    public abstract int startingDealtCard(ClueCard card);
 
     /// <summary>
     /// Give the agent a card.

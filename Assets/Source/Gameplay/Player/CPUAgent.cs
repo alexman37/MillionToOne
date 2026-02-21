@@ -45,7 +45,7 @@ public class CPUAgent : Agent
         agentLogic.processTurn();
     }
 
-    public override int startingDealtCard(Card card)
+    public override int startingDealtCard(ClueCard card)
     {
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
@@ -60,17 +60,26 @@ public class CPUAgent : Agent
 
     public override int acquireCard(Card card)
     {
-        inventory.Add(card);
-        cpuGotCard.Invoke(id, card, inventory.Count);
+        if (card.cardType == CardType.CLUE)
+        {
+            ClueCard cc = card as ClueCard;
+            inventory.Add(cc);
 
-        infoTracker.AddedCardToHand(card);
+            infoTracker.AddedCardToHand(cc);
 
-        updateConstraintsFromCard(card);
+            updateConstraintsFromCard(cc);
 
-        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
-
+            cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        } else
+        {
+            PersonCard pc = card as PersonCard;
+            recruits.Add(pc);
+        }
+        cpuGotCard.Invoke(id, card, recruits.Count);
         Debug.Log("CPU player " + agentName + " acquires card: " + card);
+
         return inventory.Count;
+
     }
 
     public override int acquireCards(List<Card> cards)
@@ -80,15 +89,25 @@ public class CPUAgent : Agent
 
     public override void playCard(Card card)
     {
-        // Gameplay result depends on what the card is - clue or action
-        card.play();
+        if(card.cardType == CardType.CLUE)
+        {
+            ClueCard clueCard = card as ClueCard;
+            // Gameplay result depends on what the card is - clue or action
+            clueCard.play();
 
-        Debug.Log("CPU declassified " + card);
+            Debug.Log("CPU declassified " + clueCard);
 
-        // For the player, just remove it from their inventory
-        inventory.Remove(card);
+            // For the player, just remove it from their inventory
+            inventory.Remove(clueCard);
 
-        cpuTurnOver.Invoke();
+            cpuTurnOver.Invoke();
+        }
+        else
+        {
+            PersonCard pc = card as PersonCard;
+            int cardex = recruits.IndexOf(pc);
+            recruits.RemoveAt(cardex);
+        }
     }
 
     public override void onClueCardDeclassified(ClueCard cc)

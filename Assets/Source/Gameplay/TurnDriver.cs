@@ -17,7 +17,8 @@ public class TurnDriver : MonoBehaviour
     public int totalRotations;
     private int currTurn;  // from 0-num agents
 
-    public List<Card> generalDeck;
+    public List<ClueCard> clueCardDeck;
+    public List<ActionCard> actionCardDeck;
 
 
     // TODO make doable for many
@@ -56,17 +57,13 @@ public class TurnDriver : MonoBehaviour
     // Generate the deck once you know what it should contain
     private void generateDeck(Roster rost)
     {
-        generalDeck = new List<Card>();
+        clueCardDeck = new List<ClueCard>();
+        actionCardDeck = new List<ActionCard>();
 
         // Add to deck: All action card types
-        /*generalDeck.Add(new ActionCard(ActionCardType.REPEAT));
-        generalDeck.Add(new ActionCard(ActionCardType.SKIP));
-        generalDeck.Add(new ActionCard(ActionCardType.REVEAL));
-        generalDeck.Add(new ActionCard(ActionCardType.STEAL));
-        generalDeck.Add(new ActionCard(ActionCardType.DRAW_2));
-        generalDeck.Add(new ActionCard(ActionCardType.EXTRA_INVENTORY));
-        generalDeck.Add(new ActionCard(ActionCardType.EXTRA_ASK_AROUND));
-        generalDeck.Add(new ActionCard(ActionCardType.ORACLE));*/
+        actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
+        actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
+        actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
 
 
         // Get properties of target
@@ -84,13 +81,13 @@ public class TurnDriver : MonoBehaviour
             {
                 if(cat != targetProperties[cpd.cpdType])
                 {
-                    generalDeck.Add(new ClueCard(cpd.cpdType, cat, false));
+                    clueCardDeck.Add(new ClueCard(cpd.cpdType, cat, false));
                 }
             }
         }
 
         // Shuffle in place
-        generalDeck = Utility.Shuffle<Card>(generalDeck);
+        clueCardDeck = Utility.Shuffle<ClueCard>(clueCardDeck);
 
         StartCoroutine(roundSetup());
     }
@@ -119,9 +116,9 @@ public class TurnDriver : MonoBehaviour
 
         // Distribute the cards to all players.
         int agentIndex = 0;
-        for(int i = 0; i < generalDeck.Count; i++)
+        for(int i = 0; i < clueCardDeck.Count; i++)
         {
-            agentsInOrder[agentIndex].startingDealtCard(generalDeck[i]);
+            agentsInOrder[agentIndex].startingDealtCard(clueCardDeck[i]);
             agentIndex = (agentIndex + 1) % agentsInOrder.Count;
             yield return null;
         }
@@ -137,5 +134,13 @@ public class TurnDriver : MonoBehaviour
         currTurn = (currTurn + 1) % agentsInOrder.Count;
 
         agentsInOrder[currTurn].markAsReady();
+    }
+
+    public void dealActionCard()
+    {
+        ActionCard next = actionCardDeck[0];
+        actionCardDeck.RemoveAt(0);
+
+        agentsInOrder[currTurn].acquireCard(next);
     }
 }

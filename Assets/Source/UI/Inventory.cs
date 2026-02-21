@@ -24,7 +24,7 @@ public class Inventory : MonoBehaviour
         PlayerAgent.playerLostCard -= removeCardFromInventory;
     }
 
-    public void addCardToInventory(Card c, int _)
+    public void addCardToInventory(Card c, int cardCount)
     {
         GameObject newCard;
         Card data;
@@ -34,6 +34,13 @@ public class Inventory : MonoBehaviour
             newCard = GameObject.Instantiate(clueCardTemplate);
             data = c as ClueCard;
             clueCardInstances.Add(newCard);
+
+            PhysicalClueCard pc = newCard.GetComponent<PhysicalClueCard>();
+            pc.setData(data);
+
+            pc.transform.parent = this.transform;
+            pc.transform.localPosition = new Vector3(cardCount * 50, 0, -1 * cardCount);
+            pc.initialize();
         }
 
         else
@@ -41,16 +48,16 @@ public class Inventory : MonoBehaviour
             newCard = GameObject.Instantiate(actionCardTemplate);
             data = c as ActionCard;
             actionCardInstances.Add(newCard);
+
+            PhysicalActionCard pc = newCard.GetComponent<PhysicalActionCard>();
+            pc.setData(data);
+
+            pc.transform.parent = this.transform;
+            pc.transform.localPosition = new Vector3(700 + cardCount * 50, 0, -20 + -1 * cardCount);
+            pc.initialize();
         }
 
-        PhysicalCard pc = newCard.GetComponent<PhysicalCard>();
-        pc.setData(data);
-
-        int cardCount = PlayerAgent.instance.getCardsCount();
-
-        pc.transform.parent = this.transform;
-        pc.transform.localPosition = new Vector3(cardCount * 50, 0, -1 * cardCount);
-        pc.initialize();
+        
     }
 
     public void removeCardFromInventory(Card c, int idx)
@@ -68,7 +75,15 @@ public class Inventory : MonoBehaviour
             }
         } else
         {
-            Debug.LogWarning("No remove for other cards yet.");
+            GameObject toDestroy = actionCardInstances[idx];
+            actionCardInstances.RemoveAt(idx);
+            Destroy(toDestroy);
+
+            for (int i = idx; i < actionCardInstances.Count; i++)
+            {
+                actionCardInstances[i].transform.parent = this.transform;
+                actionCardInstances[i].GetComponent<PhysicalCard>().bumpBackOne();
+            }
         }
     }
 }
