@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 
-public class AgentDisplay : MonoBehaviour
+public class AgentDisplay : ConditionalUI
 {
     public Image portrait;
     public TextMeshProUGUI agentName;
@@ -28,15 +28,19 @@ public class AgentDisplay : MonoBehaviour
     void Start()
     {
         bottom = this.GetComponent<Image>();
+
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.PlayerTurn, Current_UI_State.AgentSelection };
     }
 
     private void OnEnable()
     {
+        Total_UI.uiStateChanged += onUIstateUpdate;
         selectedAgent += DeselectAllOthers;
     }
 
     private void OnDisable()
     {
+        Total_UI.uiStateChanged -= onUIstateUpdate;
         selectedAgent -= DeselectAllOthers;
     }
 
@@ -71,7 +75,7 @@ public class AgentDisplay : MonoBehaviour
 
     public void OnHover()
     {
-        if (!selected)
+        if (activeUI && !selected)
         {
             bottom.sprite = hoveredSpr;
         }
@@ -79,7 +83,7 @@ public class AgentDisplay : MonoBehaviour
 
     public void OnHoverEnd()
     {
-        if(!selected)
+        if(activeUI && !selected)
         {
             bottom.sprite = emptySpr;
         }
@@ -87,23 +91,29 @@ public class AgentDisplay : MonoBehaviour
 
     public void OnSelect()
     {
-        selected = true;
-        bottom.sprite = selectedSpr;
+        if(activeUI)
+        {
+            selected = true;
+            bottom.sprite = selectedSpr;
 
-        selectedAgent.Invoke(agent.id);
+            selectedAgent.Invoke(agent.id);
+        }
     }
 
     public void OnDeselect()
     {
-        selected = false;
-        bottom.sprite = emptySpr;
+        if(activeUI)
+        {
+            selected = false;
+            bottom.sprite = emptySpr;
 
-        deselectedAgent.Invoke();
+            deselectedAgent.Invoke();
+        }
     }
 
     private void DeselectAllOthers(int id)
     {
-        if(agent.id != id)
+        if(activeUI && agent.id != id)
         {
             selected = false;
             bottom.sprite = emptySpr;
@@ -112,7 +122,10 @@ public class AgentDisplay : MonoBehaviour
 
     public void OnClick()
     {
-        if (selected) OnDeselect();
-        else OnSelect();
+        if(activeUI)
+        {
+            if (selected) OnDeselect();
+            else OnSelect();
+        }
     }
 }

@@ -87,20 +87,13 @@ public class CPUAgent : Agent
         throw new NotImplementedException();
     }
 
-    public override void playCard(Card card)
+    public override void loseCard(Card card)
     {
-        if(card.cardType == CardType.CLUE)
+        if (card is ClueCard)
         {
-            ClueCard clueCard = card as ClueCard;
-            // Gameplay result depends on what the card is - clue or action
-            clueCard.play();
-
-            Debug.Log("CPU declassified " + clueCard);
-
-            // For the player, just remove it from their inventory
-            inventory.Remove(clueCard);
-
-            cpuTurnOver.Invoke();
+            ClueCard cc = card as ClueCard;
+            int cardex = inventory.IndexOf(cc);
+            inventory.RemoveAt(cardex);
         }
         else
         {
@@ -110,12 +103,69 @@ public class CPUAgent : Agent
         }
     }
 
+    public override void playCard(Card card)
+    {
+        loseCard(card);
+
+        if(card.cardType == CardType.CLUE)
+        {
+            ClueCard clueCard = card as ClueCard;
+            // Gameplay result depends on what the card is - clue or action
+            clueCard.play();
+
+            Debug.Log("CPU declassified " + clueCard);
+
+            cpuTurnOver.Invoke();
+        }
+        else
+        {
+            PersonCard pc = card as PersonCard;
+
+            pc.play();
+
+            if (pc is ActionCard)
+            {
+                ActionCard ac = pc as ActionCard;
+                switch (ac.actionCardType)
+                {
+                    case ActionCardType.CENSOR:
+                        // TODO choose card (for now just do random)
+                        int randIndex = UnityEngine.Random.Range(0, inventory.Count);
+                        inventory[randIndex].redact();
+                        playCard(inventory[randIndex]);
+                        break;
+                    case ActionCardType.SIDEKICK:
+                        // TODO you can now ask 2 people for information
+                        break;
+                    case ActionCardType.ANALYST:
+                        // TODO force one other player to show a card of your choice
+                        break;
+                    case ActionCardType.LAWYER:
+                        // TODO force chosen player to declassify a clue card of your choice for no reward
+                        break;
+                    case ActionCardType.BODYGUARD:
+                        // TODO block a negative action on yourself
+                        break;
+                    case ActionCardType.ENFORCER:
+                        // TODO can guess 2 more suspects this turn
+                        break;
+                    case ActionCardType.INTERN:
+                        // TODO turn this action card into any other
+                        break;
+                }
+            }
+        }
+    }
+
     public override void onClueCardDeclassified(ClueCard cc)
     {
-        infoTracker.MarkDefinitive(cc.cpdType, cc.category, cc.onTarget);
+        if (!cc.redacted)
+        {
+            infoTracker.MarkDefinitive(cc.cpdType, cc.category, cc.onTarget);
 
-        updateConstraintsFromCard(cc);
-        cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+            updateConstraintsFromCard(cc);
+            cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        }
     }
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)

@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine.UI;
 
-public class TargetCard : MonoBehaviour
+public class TargetCard : ConditionalUI
 {
     [SerializeField] private TextMeshProUGUI cpdNum;
     [SerializeField] private TextMeshProUGUI cpdTitle;
@@ -21,16 +21,18 @@ public class TargetCard : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.PlayerTurn };
     }
 
     private void OnEnable()
     {
+        Total_UI.uiStateChanged += onUIstateUpdate;
         TargetCharGuess.playerGuessesTargetProperty += RevealToAll;
     }
 
     private void OnDisable()
     {
+        Total_UI.uiStateChanged -= onUIstateUpdate;
         TargetCharGuess.playerGuessesTargetProperty -= RevealToAll;
     }
 
@@ -57,7 +59,7 @@ public class TargetCard : MonoBehaviour
 
     public void OnMouseEnter()
     {
-        if(!revealed)
+        if (activeUI && !revealed)
         {
             selectedSpr.gameObject.SetActive(true);
         }
@@ -65,13 +67,17 @@ public class TargetCard : MonoBehaviour
 
     public void OnMouseExit()
     {
-        selectedSpr.gameObject.SetActive(false);
+        if(activeUI)
+        {
+            selectedSpr.gameObject.SetActive(false);
+        }
     }
 
     public void OnMouseDown()
     {
-        if(!revealed)
+        if(activeUI && !revealed)
         {
+            Total_UI.instance.changeUIState(Current_UI_State.GuessingCPD);
             PopupCanvas.instance.popup_targetPropertyGuess(cpdType);
         }
     }

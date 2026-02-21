@@ -7,12 +7,17 @@ using TMPro;
 /// <summary>
 /// Controls all physical aspects of the card (clicking, hovering, etc.)
 /// </summary>
-public class PhysicalCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+public class PhysicalCard : ConditionalUI, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     private Vector3 normalPosition;
     private Vector3 raisedPosition;
 
     protected Card data;
+
+    private void Start()
+    {
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.PlayerTurn };
+    }
 
     // You must ensure the card component is created first, so we can't throw this in start
     public virtual void initialize()
@@ -42,17 +47,26 @@ public class PhysicalCard : MonoBehaviour, IPointerClickHandler, IPointerEnterHa
 
     public void OnPointerEnter(PointerEventData pointerEventData)
     {
-        transform.localPosition = raisedPosition;
+        if(activeUI)
+        {
+            transform.localPosition = raisedPosition;
+        }
     }
 
     public void OnPointerExit(PointerEventData pointerEventData)
     {
-        transform.localPosition = normalPosition;
+        if (activeUI)
+        {
+            transform.localPosition = normalPosition;
+        }
     }
 
     public void OnPointerClick(PointerEventData pointerEventData)
     {
-        Debug.Log("Attempted to play card");
-        PlayerAgent.instance.playCard(data);
+        if (activeUI)
+        {
+            Debug.Log("Attempted to play card");
+            PlayerAgent.instance.playCard(data);
+        }
     }
 }

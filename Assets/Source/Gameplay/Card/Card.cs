@@ -11,12 +11,17 @@ using UnityEngine;
 public abstract class Card
 {
     public CardType cardType;
-    protected Agent owner;
+    public Agent owner;
 
     /// <summary>
     /// Acquire the card. Notify the player to add it to their inventory, and maybe do other stuff
     /// </summary>
     public abstract void acquire(Agent agent);
+
+    /// <summary>
+    /// Acquire the card directly from another agent
+    /// </summary>
+    public abstract void acquireFrom(Agent receiving, Agent giving);
 
     /// <summary>
     /// Play the card, showing it to everyone.

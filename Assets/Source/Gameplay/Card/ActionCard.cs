@@ -10,6 +10,8 @@ using UnityEngine;
 /// </summary>
 public class ActionCard : PersonCard
 {
+    private PhysicalActionCard physical;
+
     public ActionCardType actionCardType;
 
 
@@ -19,38 +21,40 @@ public class ActionCard : PersonCard
         actionCardType = actionType;
     }
 
+    public void setPhysical(PhysicalActionCard pac)
+    {
+        physical = pac;
+    }
+
     public override void acquire(Agent agent)
     {
         owner = agent;
     }
 
+    public override void acquireFrom(Agent receiving, Agent giving)
+    {
+        owner = receiving;
+        giving.loseCard(this);
+    }
+
     public override void play()
     {
         Debug.Log("Playing action card " + ToString() + " for agent " + owner);
-        // TODO: Is it the player or not?
-        switch(actionCardType)
+    }
+
+    // The Intern card uses this to convert itself into another action card.
+    public PersonCard convert(PersonCard pc)
+    {
+        if(pc is ActionCard)
         {
-            case ActionCardType.CENSOR:
-                // TODO redact chosen clue card
-                break;
-            case ActionCardType.SIDEKICK:
-                // TODO you can now ask 2 people for information
-                break;
-            case ActionCardType.ANALYST:
-                // TODO force one other player to show a card of your choice
-                break;
-            case ActionCardType.LAWYER:
-                // TODO force chosen player to declassify a clue card of your choice for no reward
-                break;
-            case ActionCardType.BODYGUARD:
-                // TODO block a negative action on yourself
-                break;
-            case ActionCardType.ENFORCER:
-                // TODO can guess 2 more suspects this turn
-                break;
-            case ActionCardType.INTERN:
-                // TODO turn this action card into any other
-                break;
+            ActionCard ac = pc as ActionCard;
+            actionCardType = ac.actionCardType;
+            physical.reinit(ac);
+            return this;
+        } else
+        {
+            GoldCard gc = pc as GoldCard;
+            return GoldCard.convertIntern(gc.goldCardType, physical);
         }
     }
 

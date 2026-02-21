@@ -65,6 +65,10 @@ public class TurnDriver : MonoBehaviour
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
 
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+
 
         // Get properties of target
         List<CPD_Variant> targetData = rost.getTargetAsCPDs();
@@ -138,9 +142,16 @@ public class TurnDriver : MonoBehaviour
 
     public void dealActionCard()
     {
-        ActionCard next = actionCardDeck[0];
-        actionCardDeck.RemoveAt(0);
+        if(actionCardDeck.Count > 0)
+        {
+            ActionCard next = actionCardDeck[0];
+            actionCardDeck.RemoveAt(0);
 
-        agentsInOrder[currTurn].acquireCard(next);
+            agentsInOrder[currTurn].acquireCard(next);
+        } else
+        {
+            Debug.LogWarning("No action cards left to deal!");
+        }
+        
     }
 }

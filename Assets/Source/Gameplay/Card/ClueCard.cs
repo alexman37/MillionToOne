@@ -12,11 +12,13 @@ using System;
 /// </summary>
 public class ClueCard : Card
 {
+    private PhysicalClueCard physical;
+
     public CPD_Type cpdType;        // What CPD is this card about?
     public string category;         // What category is it identifying?
     public bool onTarget = false;   // If true, the target has this category
 
-    private bool redacted = false;   // If true, no one can see what was on this card, making it functionally useless
+    public bool redacted = false;   // If true, no one can see what was on this card, making it functionally useless
 
     public static event Action<ClueCard> clueCardDeclassified;
 
@@ -31,9 +33,20 @@ public class ClueCard : Card
         //GetComponentInChildren<TextMeshProUGUI>().text = cpdType + ": " + cat;
     }
 
+    public void setPhysical(PhysicalClueCard pcc)
+    {
+        physical = pcc;
+    }
+
     public override void acquire(Agent agent)
     {
         owner = agent;
+    }
+
+    public override void acquireFrom(Agent receiving, Agent giving)
+    {
+        owner = receiving;
+        giving.loseCard(this);
     }
 
     public override void play()
@@ -46,6 +59,7 @@ public class ClueCard : Card
     public void redact()
     {
         redacted = true;
+        physical.redact();
     }
 
     public override string ToString()

@@ -5,7 +5,7 @@ using System;
 using TMPro;
 
 // Button used for guessing characteristics of the target
-public class TargetCharGuess : MonoBehaviour
+public class TargetCharGuess : ConditionalUI
 {
     public CPD_Type cpdType;
     public string category;
@@ -20,6 +20,10 @@ public class TargetCharGuess : MonoBehaviour
     void Start()
     {
         if (playerGuessesTargetProperty == null) playerGuessesTargetProperty += (_, __, b) => { };
+
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.GuessingCPD };
+
+        activeUI = true;
     }
 
     public void initialize(CPD_Type cpdType, string cat)
@@ -31,6 +35,7 @@ public class TargetCharGuess : MonoBehaviour
 
     public void Guess()
     {
+        if (!activeUI) return;
         PopupCanvas.instance.popup_targetPropertyClear();
 
         bool wasCorrect = TurnDriver.instance.currentRoster.targetHasProperty(cpdType, category);

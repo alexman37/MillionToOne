@@ -42,6 +42,11 @@ public abstract class Agent
     public abstract int acquireCards(List<Card> cards);
 
     /// <summary>
+    /// The agent loses a card in their hand.
+    /// </summary>
+    public abstract void loseCard(Card card);
+
+    /// <summary>
     /// When a clue card is declassified (shown to everyone),
     /// Update your own information automatically
     /// </summary>

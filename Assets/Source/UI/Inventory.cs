@@ -27,16 +27,16 @@ public class Inventory : MonoBehaviour
     public void addCardToInventory(Card c, int cardCount)
     {
         GameObject newCard;
-        Card data;
 
         if (c.cardType == CardType.CLUE)
         {
             newCard = GameObject.Instantiate(clueCardTemplate);
-            data = c as ClueCard;
+            ClueCard data = c as ClueCard;
             clueCardInstances.Add(newCard);
 
             PhysicalClueCard pc = newCard.GetComponent<PhysicalClueCard>();
             pc.setData(data);
+            data.setPhysical(pc);
 
             pc.transform.parent = this.transform;
             pc.transform.localPosition = new Vector3(cardCount * 50, 0, -1 * cardCount);
@@ -46,11 +46,12 @@ public class Inventory : MonoBehaviour
         else
         {
             newCard = GameObject.Instantiate(actionCardTemplate);
-            data = c as ActionCard;
+            ActionCard data = c as ActionCard;
             actionCardInstances.Add(newCard);
 
             PhysicalActionCard pc = newCard.GetComponent<PhysicalActionCard>();
             pc.setData(data);
+            data.setPhysical(pc);
 
             pc.transform.parent = this.transform;
             pc.transform.localPosition = new Vector3(700 + cardCount * 50, 0, -20 + -1 * cardCount);
@@ -85,5 +86,20 @@ public class Inventory : MonoBehaviour
                 actionCardInstances[i].GetComponent<PhysicalCard>().bumpBackOne();
             }
         }
+    }
+
+    public List<GameObject> getCardsForSelectionWindow(int whatKinds)
+    {
+        List<GameObject> cardCopies = new List<GameObject>();
+        if(whatKinds != 1)
+        {
+            cardCopies.AddRange(clueCardInstances);
+        }
+        if(whatKinds != 0)
+        {
+            cardCopies.AddRange(actionCardInstances);
+        }
+
+        return cardCopies;
     }
 }

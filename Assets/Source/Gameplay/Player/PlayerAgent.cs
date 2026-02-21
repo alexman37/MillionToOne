@@ -11,6 +11,7 @@ public class PlayerAgent : Agent
 
     public static event Action<Card, int> playerGotCard = (_,n) => { };
     public static event Action<Card, int> playerLostCard = (_,n) => { };
+    public static event Action<Card> updateFormWithCard = (_) => { };
     public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
 
@@ -52,12 +53,14 @@ public class PlayerAgent : Agent
     {
         isYourTurn = true;
         Debug.Log("It's the player's turn.");
+        Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
     }
 
     public override int startingDealtCard(ClueCard card)
     {
         inventory.Add(card);
         playerGotCard.Invoke(card, inventory.Count);
+        updateFormWithCard.Invoke(card);
 
         updateConstraintsFromCard(card);
         playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
@@ -81,6 +84,7 @@ public class PlayerAgent : Agent
         }
 
         playerGotCard.Invoke(card, recruits.Count);
+        updateFormWithCard.Invoke(card);
         Debug.Log("The player acquires card: " + card);
 
         return inventory.Count;
@@ -92,6 +96,23 @@ public class PlayerAgent : Agent
         throw new NotImplementedException();
     }
 
+    public override void loseCard(Card card)
+    {
+        if(card is ClueCard)
+        {
+            ClueCard cc = card as ClueCard;
+            int cardex = inventory.IndexOf(cc);
+            inventory.RemoveAt(cardex);
+            playerLostCard.Invoke(cc, cardex);
+        } else
+        {
+            PersonCard pc = card as PersonCard;
+            int cardex = recruits.IndexOf(pc);
+            recruits.RemoveAt(cardex);
+            playerLostCard.Invoke(pc, cardex);
+        }
+    }
+
     public override void playCard(Card card)
     {
         if(card.cardType == CardType.CLUE)
@@ -100,27 +121,69 @@ public class PlayerAgent : Agent
             // Gameplay result depends on what the card is - clue or action
             clueCard.play();
 
-            // For the player, just remove it from their inventory
-            int cardex = inventory.IndexOf(clueCard);
-            inventory.RemoveAt(cardex);
-            playerLostCard.Invoke(clueCard, cardex);
+            // Earn an action card
+            if(!clueCard.redacted)
+                TurnDriver.instance.dealActionCard();
 
-            playerTurnOver.Invoke();
+            loseCard(card);
+
+            endOfTurn();
         } 
         else
         {
             PersonCard pc = card as PersonCard;
-            int cardex = recruits.IndexOf(pc);
-            recruits.RemoveAt(cardex);
-            playerLostCard.Invoke(pc, cardex);
+
+            bool willLoseCard = true;
+
+            pc.play();
+
+            if(pc is ActionCard)
+            {
+                ActionCard ac = pc as ActionCard;
+                switch (ac.actionCardType)
+                {
+                    case ActionCardType.CENSOR:
+                        SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.REDACTION, 1, this, 0, true);
+                        break;
+                    case ActionCardType.SIDEKICK:
+                        // TODO you can now ask 2 people for information
+                        break;
+                    case ActionCardType.ANALYST:
+                        //SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.VIEW, 1, , 2, true);
+                        break;
+                    case ActionCardType.LAWYER:
+                        //SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.DECLASS, 1, , 0, true);
+                        break;
+                    case ActionCardType.BODYGUARD:
+                        // TODO block a negative action on yourself
+                        break;
+                    case ActionCardType.ENFORCER:
+                        // TODO can guess 2 more suspects this turn
+                        break;
+                    case ActionCardType.INTERN:
+                        SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE_COPY, 1, this, 1, true);
+                        willLoseCard = false;
+                        //ac.convert(recruits[randIndexConverter]);
+                        break;
+                }
+            }
+
+            if(willLoseCard)
+            {
+                loseCard(card);
+            }
         }
         
     }
 
     public override void onClueCardDeclassified(ClueCard cc)
     {
-        updateConstraintsFromCard(cc);
-        playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        if(!cc.redacted)
+        {
+            updateConstraintsFromCard(cc);
+            updateFormWithCard.Invoke(cc);
+            playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+        }
     }
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
@@ -155,7 +218,7 @@ public class PlayerAgent : Agent
             Debug.Log("Not right");
         }
 
-        playerTurnOver.Invoke();
+        endOfTurn();
     }
 
     public override void guessTarget(int characterId, bool correct)
@@ -168,13 +231,20 @@ public class PlayerAgent : Agent
         } else
         {
             Debug.Log("Wrong guy! Your turn is over");
-            playerTurnOver.Invoke();
+            endOfTurn();
         }
     }
 
     public override void useAbility()
     {
 
+    }
+
+    private void endOfTurn()
+    {
+        // Immediately change UI state off of player state, allow for no funny business
+        Total_UI.instance.changeUIState(Current_UI_State.Unknown);
+        playerTurnOver.Invoke();
     }
 
     // CPU handles their constraints locally.

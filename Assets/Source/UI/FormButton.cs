@@ -11,7 +11,7 @@ using TMPro;
 /// It also has a "no" button for ruling out this category completely.
 /// There are 3 general states for a form button to be in: Eliminated (Ruled out), Confirmed, or Unknown.
 /// </summary>
-public class FormButton : MonoBehaviour
+public class FormButton : ConditionalUI
 {
     FormButtonState state;
     public CPD_Type cpdType; // which CPD is this Formbutton acting on?
@@ -56,11 +56,14 @@ public class FormButton : MonoBehaviour
         imgCol3 = yesButton.gameObject.GetComponent<Image>();
 
         updatedConstraint += (_,__,f) => { };
+
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.PlayerTurn };
     }
 
     private void OnEnable()
     {
-        PlayerAgent.playerGotCard += updateConstraintFromCard;
+        Total_UI.uiStateChanged += onUIstateUpdate;
+        PlayerAgent.updateFormWithCard += updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty += updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent += askAroundForAgent;
         AgentDisplay.deselectedAgent += stopAskingAround;
@@ -69,7 +72,8 @@ public class FormButton : MonoBehaviour
 
     private void OnDisable()
     {
-        PlayerAgent.playerGotCard -= updateConstraintFromCard;
+        Total_UI.uiStateChanged -= onUIstateUpdate;
+        PlayerAgent.updateFormWithCard -= updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty -= updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent -= askAroundForAgent;
         AgentDisplay.deselectedAgent -= stopAskingAround;
@@ -81,6 +85,7 @@ public class FormButton : MonoBehaviour
     /// </summary>
     public void toggleYesButton()
     {
+        if (!activeUI) return;
         if (!locked && acceptingInput)
         {
             yesTicked = !yesTicked;
@@ -111,7 +116,8 @@ public class FormButton : MonoBehaviour
     /// </summary>
     public void toggleNoButton()
     {
-        if(!locked && acceptingInput && !yesTicked)
+        if (!activeUI) return;
+        if (!locked && acceptingInput && !yesTicked)
         {
             noTicked = !noTicked;
             if (noTicked && state != FormButtonState.Confirmed)
@@ -157,7 +163,7 @@ public class FormButton : MonoBehaviour
     /// </summary>
     private void updateConstraintForButton(bool withCertainty)
     {
-        if(!locked)
+        if (!locked)
         {
             // Adjust draws
             if (state == FormButtonState.Confirmed)
@@ -186,9 +192,9 @@ public class FormButton : MonoBehaviour
     /// <summary>
     /// Update form constraints from receiving a card
     /// </summary>
-    private void updateConstraintFromCard(Card card, int _)
+    private void updateConstraintFromCard(Card card)
     {
-        if(card is ClueCard)
+        if (card is ClueCard)
         {
             ClueCard cc = card as ClueCard;
             if (this.cpdType == cc.cpdType && this.category == cc.category)
@@ -207,6 +213,7 @@ public class FormButton : MonoBehaviour
     /// </summary>
     private void updateConstraintFromTargetGuess(CPD_Type cpdType, string cat, bool wasCorrect)
     {
+        if (!activeUI) return;
         if (this.cpdType == cpdType && this.category == cat)
         {
             // Correct choice: Update everything
@@ -260,12 +267,14 @@ public class FormButton : MonoBehaviour
 
     private void askAroundForAgent(int id)
     {
+        if (!activeUI) return;
         // TODO get all data on this agent
         askAroundMenu.SetActive(true);
     }
 
     private void stopAskingAround()
     {
+        if (!activeUI) return;
         askAroundMenu.SetActive(false);
         askAroundAsk.image.color = Color.white;
         currentlyAskingAround = false;
@@ -274,6 +283,7 @@ public class FormButton : MonoBehaviour
     // TODO...do we really have to create a new object for this every time
     private void addToAskAround()
     {
+        if (!activeUI) return;
         addToAskAroundList.Invoke((cpdType, category));
         askAroundAsk.image.color = Color.green;
         currentlyAskingAround = true;
@@ -281,6 +291,7 @@ public class FormButton : MonoBehaviour
 
     private void removeFromAskAround()
     {
+        if (!activeUI) return;
         removeFromAskAroundList.Invoke((cpdType, category));
         askAroundAsk.image.color = Color.white;
         currentlyAskingAround = false;
@@ -288,6 +299,7 @@ public class FormButton : MonoBehaviour
 
     public void toggleAskAround()
     {
+        if (!activeUI) return;
         if (currentlyAskingAround) removeFromAskAround();
         else addToAskAround();
     }

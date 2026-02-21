@@ -16,4 +16,11 @@ public class PhysicalActionCard : PhysicalCard
         PersonCard pc = data as PersonCard;
         personTitle.text = pc.ToString();
     }
+
+    public void reinit(PersonCard newCard)
+    {
+        setData(newCard);
+        PersonCard pc = data as PersonCard;
+        personTitle.text = pc.ToString();
+    }
 }

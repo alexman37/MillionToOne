@@ -10,6 +10,8 @@ using UnityEngine;
 /// </summary>
 public class GoldCard : PersonCard
 {
+    private PhysicalActionCard physical;
+
     public GoldCardType goldCardType;
 
 
@@ -19,9 +21,20 @@ public class GoldCard : PersonCard
         goldCardType = goldType;
     }
 
+    public void setPhysical(PhysicalActionCard pac)
+    {
+        physical = pac;
+    }
+
     public override void acquire(Agent agent)
     {
         owner = agent;
+    }
+
+    public override void acquireFrom(Agent receiving, Agent giving)
+    {
+        owner = receiving;
+        giving.loseCard(this);
     }
 
     public override void play()
@@ -51,6 +64,14 @@ public class GoldCard : PersonCard
                 // TODO confirm or deny your current clue form's accuracy
                 break;
         }
+    }
+
+    public static GoldCard convertIntern(GoldCardType goldType, PhysicalActionCard theirPhysical)
+    {
+        GoldCard newCard = new GoldCard(goldType);
+        theirPhysical.reinit(newCard);
+        newCard.physical = theirPhysical;
+        return newCard;
     }
 
     public override string ToString()
