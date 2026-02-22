@@ -17,6 +17,8 @@ public class PhysicalCard : ConditionalUI, IPointerClickHandler, IPointerEnterHa
     private void Start()
     {
         allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.PlayerTurn };
+
+        if (allowedGameStates.Contains(Total_UI.uiState)) activeUI = true;
     }
 
     // You must ensure the card component is created first, so we can't throw this in start

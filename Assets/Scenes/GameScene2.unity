@@ -325,7 +325,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   container: {fileID: 698974311}
-  selectionCardTemplate: {fileID: 8745528522681806204, guid: ab31920c1d0ef0b43b506e2dfb2aee50, type: 3}
+  selectionCardTemplate_clue: {fileID: 8745528522681806204, guid: ab31920c1d0ef0b43b506e2dfb2aee50, type: 3}
+  selectionCardTemplate_action: {fileID: 989118325456257426, guid: c6becc2ae91622142aadeb8c081fed50, type: 3}
+  selectionCardTemplate_gold: {fileID: 0}
+  currentOutcome: 0
 --- !u!1 &103468524
 GameObject:
   m_ObjectHideFlags: 0
@@ -4954,6 +4957,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfde0677ea9e17541b8e16f443a6d05c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  activeUI: 0
   cpdType: 0
   category: 
   text: {fileID: 446247969}

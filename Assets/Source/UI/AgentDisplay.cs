@@ -21,8 +21,12 @@ public class AgentDisplay : ConditionalUI
     private Agent agent;
     private bool selected;
 
-    public static event Action<int> selectedAgent = (_) => { };
-    public static event Action deselectedAgent = () => { };
+    // Selected an agent while it's the player's turn - Will ask them for clues
+    public static event Action<int> selectedAgent_PT = (_) => { };
+    public static event Action deselectedAgent_PT = () => { };
+
+    // Selected an agent after using an action card - Will use the action card on them
+    public static event Action<int> selectedAgent_AS = (_) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -35,13 +39,13 @@ public class AgentDisplay : ConditionalUI
     private void OnEnable()
     {
         Total_UI.uiStateChanged += onUIstateUpdate;
-        selectedAgent += DeselectAllOthers;
+        selectedAgent_PT += DeselectAllOthers;
     }
 
     private void OnDisable()
     {
         Total_UI.uiStateChanged -= onUIstateUpdate;
-        selectedAgent -= DeselectAllOthers;
+        selectedAgent_PT -= DeselectAllOthers;
     }
 
     public void setupDisplay(Agent agent, int totalSize)
@@ -96,7 +100,10 @@ public class AgentDisplay : ConditionalUI
             selected = true;
             bottom.sprite = selectedSpr;
 
-            selectedAgent.Invoke(agent.id);
+            if(Total_UI.uiState == Current_UI_State.PlayerTurn)
+                selectedAgent_PT.Invoke(agent.id);
+            else if (Total_UI.uiState == Current_UI_State.AgentSelection)
+                selectedAgent_AS.Invoke(agent.id);
         }
     }
 
@@ -107,7 +114,7 @@ public class AgentDisplay : ConditionalUI
             selected = false;
             bottom.sprite = emptySpr;
 
-            deselectedAgent.Invoke();
+            deselectedAgent_PT.Invoke();
         }
     }
 

@@ -51,6 +51,8 @@ public class PlayerAgent : Agent
 
     public override void markAsReady()
     {
+        askAroundCount = 1;
+        targetGuessCount = 1;
         isYourTurn = true;
         Debug.Log("It's the player's turn.");
         Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
@@ -146,24 +148,52 @@ public class PlayerAgent : Agent
                         SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.REDACTION, 1, this, 0, true);
                         break;
                     case ActionCardType.SIDEKICK:
-                        // TODO you can now ask 2 people for information
+                        askAroundCount += 1;
                         break;
                     case ActionCardType.ANALYST:
-                        //SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.VIEW, 1, , 2, true);
+                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 1, 2, false);
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
                         break;
                     case ActionCardType.LAWYER:
-                        //SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.DECLASS, 1, , 0, true);
-                        break;
-                    case ActionCardType.BODYGUARD:
-                        // TODO block a negative action on yourself
+                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.DECLASS, 1, 0, false);
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
                         break;
                     case ActionCardType.ENFORCER:
-                        // TODO can guess 2 more suspects this turn
+                        targetGuessCount += 2;
                         break;
                     case ActionCardType.INTERN:
                         SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE_COPY, 1, this, 1, true);
                         willLoseCard = false;
                         //ac.convert(recruits[randIndexConverter]);
+                        break;
+                }
+            }
+            else if(pc is GoldCard)
+            {
+                GoldCard gc = pc as GoldCard;
+                switch (gc.goldCardType)
+                {
+                    case GoldCardType.ESCORT:
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                        // TODO block them
+                        break;
+                    case GoldCardType.ASSASSAIN:
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                        // TODO kill them
+                        break;
+                    case GoldCardType.MERCENARIES:
+                        targetGuessCount += 8;
+                        break;
+                    case GoldCardType.HACKER:
+                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 3, 2, false);
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                        break;
+                    case GoldCardType.THIEF:
+                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.TAKE, 1, 2, false);
+                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                        break;
+                    case GoldCardType.INSIDER:
+                        // TODO tough one...
                         break;
                 }
             }

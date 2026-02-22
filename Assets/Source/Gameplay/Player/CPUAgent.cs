@@ -39,6 +39,9 @@ public class CPUAgent : Agent
 
     public override void markAsReady()
     {
+        askAroundCount = 1;
+        targetGuessCount = 1;
+
         Debug.Log("It's CPU player " + agentName + "'s turn.");
 
         // TODO Do the thing with animations...

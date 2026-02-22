@@ -10,7 +10,6 @@ public class TurnDriver : MonoBehaviour
     public static TurnDriver instance;
 
     public List<Agent> agentsInOrder = new List<Agent>();
-    public Dictionary<int, Agent> agentIDmappings = new Dictionary<int, Agent>();
 
     public Roster currentRoster;
     public Agent playerAgent;
@@ -61,6 +60,14 @@ public class TurnDriver : MonoBehaviour
         actionCardDeck = new List<ActionCard>();
 
         // Add to deck: All action card types
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));

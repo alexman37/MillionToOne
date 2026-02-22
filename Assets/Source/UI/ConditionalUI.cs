@@ -26,8 +26,6 @@ public class ConditionalUI : MonoBehaviour
         // If we forgot to specify allowed states, or haven't set them yet, assume they are all OK
         if (allowedGameStates == null) activeUI = true;
         else activeUI = allowedGameStates.Contains(newState);
-
-        Debug.Log("*** Active UI for " + this.name + " set to " + activeUI);
     }
 }
 

@@ -53,16 +53,16 @@ public class RosterForm : MonoBehaviour
 
     private void OnEnable()
     {
-        AgentDisplay.selectedAgent += StartedAskingAround;
-        AgentDisplay.deselectedAgent += StoppedAskingAround;
+        AgentDisplay.selectedAgent_PT += StartedAskingAround;
+        AgentDisplay.deselectedAgent_PT += StoppedAskingAround;
         FormButton.addToAskAroundList += AddToAskFor;
         FormButton.removeFromAskAroundList += AddToAskFor;
     }
 
     private void OnDisable()
     {
-        AgentDisplay.selectedAgent -= StartedAskingAround;
-        AgentDisplay.deselectedAgent -= StoppedAskingAround;
+        AgentDisplay.selectedAgent_PT -= StartedAskingAround;
+        AgentDisplay.deselectedAgent_PT -= StoppedAskingAround;
         FormButton.addToAskAroundList -= AddToAskFor;
         FormButton.removeFromAskAroundList -= AddToAskFor;
     }

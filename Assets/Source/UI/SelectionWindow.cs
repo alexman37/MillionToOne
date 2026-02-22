@@ -10,7 +10,9 @@ public class SelectionWindow : MonoBehaviour
     public static SelectionWindow instance;
 
     [SerializeField] GameObject container;
-    [SerializeField] GameObject selectionCardTemplate;
+    [SerializeField] GameObject selectionCardTemplate_clue;
+    [SerializeField] GameObject selectionCardTemplate_action;
+    [SerializeField] GameObject selectionCardTemplate_gold;
 
     List<SelectionCard> cardsInSelectionWindow = new List<SelectionCard>();
 
@@ -19,12 +21,40 @@ public class SelectionWindow : MonoBehaviour
     int allowedSelections = 1;
     public SelectionCardOutcome currentOutcome;
 
+    // Don't need these unless we have to wait for an agent selection
+    private int as_whatKinds;
+    private bool as_cardsFaceUp;
+
 
     // Start is called before the first frame update
     void Start()
     {
         if (instance == null) instance = this;
         else Destroy(this);
+    }
+
+    private void OnEnable()
+    {
+        AgentDisplay.selectedAgent_AS += displayAfterAgentSelect;
+    }
+
+    private void OnDisable()
+    {
+        AgentDisplay.selectedAgent_AS -= displayAfterAgentSelect;
+    }
+
+    public void prepareForDisplay(SelectionCardOutcome outcome, int times, int whatKinds, bool cardsFaceUp)
+    {
+        currentOutcome = outcome;
+        allowedSelections = times;
+
+        as_whatKinds = whatKinds;
+        as_cardsFaceUp = cardsFaceUp;
+    }
+
+    private void displayAfterAgentSelect(int agentId)
+    {
+        displaySelection(currentOutcome, allowedSelections, TurnDriver.instance.agentsInOrder[agentId], as_whatKinds, as_cardsFaceUp);
     }
 
     /// <summary>
@@ -36,6 +66,7 @@ public class SelectionWindow : MonoBehaviour
         container.SetActive(true);
 
         currentOutcome = outcome;
+        allowedSelections = times;
 
         List<Card> cardsToGet = new List<Card>();
         if (whatKinds != 1) cardsToGet.AddRange(agent.inventory);
@@ -44,7 +75,9 @@ public class SelectionWindow : MonoBehaviour
         int count = 0;
         foreach (Card card in cardsToGet)
         {
-            GameObject go = GameObject.Instantiate(selectionCardTemplate, this.transform);
+            GameObject go = GameObject.Instantiate(card.cardType == CardType.CLUE ? 
+                selectionCardTemplate_clue : selectionCardTemplate_action,
+                this.transform);
             SelectionCard sCard = go.GetComponentInChildren<SelectionCard>();
             sCard.initialize(card, cardsFaceUp);
 

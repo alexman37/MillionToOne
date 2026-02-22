@@ -9,10 +9,13 @@ public abstract class Agent
     public string agentName;
     public Sprite portrait;
 
-    public int maxCardCount = 5;
+    public int maxActionCardCount = 5;
     public List<ClueCard> inventory = new List<ClueCard>();
     public List<PersonCard> recruits = new List<PersonCard>();
     public AgentAbility ability;
+
+    public int targetGuessCount = 1;
+    public int askAroundCount = 1;
 
     public RosterConstraints rosterConstraints;
 

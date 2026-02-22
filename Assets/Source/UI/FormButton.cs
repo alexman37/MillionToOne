@@ -65,8 +65,8 @@ public class FormButton : ConditionalUI
         Total_UI.uiStateChanged += onUIstateUpdate;
         PlayerAgent.updateFormWithCard += updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty += updateConstraintFromTargetGuess;
-        AgentDisplay.selectedAgent += askAroundForAgent;
-        AgentDisplay.deselectedAgent += stopAskingAround;
+        AgentDisplay.selectedAgent_PT += askAroundForAgent;
+        AgentDisplay.deselectedAgent_PT += stopAskingAround;
         RosterForm.completedAskAround += stopAskingAround;
     }
 
@@ -75,8 +75,8 @@ public class FormButton : ConditionalUI
         Total_UI.uiStateChanged -= onUIstateUpdate;
         PlayerAgent.updateFormWithCard -= updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty -= updateConstraintFromTargetGuess;
-        AgentDisplay.selectedAgent -= askAroundForAgent;
-        AgentDisplay.deselectedAgent -= stopAskingAround;
+        AgentDisplay.selectedAgent_PT -= askAroundForAgent;
+        AgentDisplay.deselectedAgent_PT -= stopAskingAround;
         RosterForm.completedAskAround -= stopAskingAround;
     }
 
