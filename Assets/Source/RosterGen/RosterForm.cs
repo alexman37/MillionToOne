@@ -33,7 +33,8 @@ public class RosterForm : MonoBehaviour
     [SerializeField] private GameObject askAroundCommands;
     private List<(CPD_Type, string)> askingFor = new List<(CPD_Type, string)>();
     private int agentToAsk;
-    public static event Action completedAskAround;
+    public static event Action askAroundCompleted = () => { };
+    public static event Action askAroundCancelled = () => { };
 
     private float nextFormGroupOffset = 0;
 
@@ -114,7 +115,7 @@ public class RosterForm : MonoBehaviour
         askingFor.Clear();
         askAroundCommands.SetActive(false);
         formTitle.text = "CHARACTER SHEET";
-        completedAskAround.Invoke();
+        askAroundCancelled.Invoke();
     }
 
     private void AddToAskFor((CPD_Type, string) cat)
@@ -130,7 +131,13 @@ public class RosterForm : MonoBehaviour
     public void AskAround()
     {
         PlayerAgent.instance.askAgent(TurnDriver.instance.agentsInOrder[agentToAsk], askingFor);
+        CompleteAskAround();
+    }
+
+    private void CompleteAskAround()
+    {
         StoppedAskingAround();
+        askAroundCompleted.Invoke();
     }
 
 

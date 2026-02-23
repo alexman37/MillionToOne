@@ -32,6 +32,9 @@ public abstract class Card
 // Action or Gold Card
 public abstract class PersonCard : Card
 {
+    protected PhysicalActionCard physical;
+
+
     public override string ToString()
     {
         if(this is ActionCard)

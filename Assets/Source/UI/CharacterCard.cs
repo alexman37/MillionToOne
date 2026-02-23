@@ -7,7 +7,7 @@ public class CharacterCard : ConditionalUI
 {
     public int characterId;
 
-    public static event Action<int, bool> charCardClicked = (_,__) => { };
+    public static event Action<int> charCardClicked = (_) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -30,9 +30,7 @@ public class CharacterCard : ConditionalUI
     {
         if(activeUI)
         {
-            Debug.Log("Correct ID= " + TurnDriver.instance.currentRoster.targetId + " YourID= " + characterId);
-            bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
-            charCardClicked.Invoke(characterId, correct);
+            charCardClicked.Invoke(characterId);
         }
     }
 }

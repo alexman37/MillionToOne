@@ -20,6 +20,8 @@ public class Total_UI : MonoBehaviour
     public Image clueForm;
     public Image numSuspects;
     public Playerbase playerbase;
+
+    private Coroutine activeCo = null;
     
 
     // Start is called before the first frame update
@@ -34,9 +36,25 @@ public class Total_UI : MonoBehaviour
         playerbase.initialize(agentsInOrder, rost.simulatedTotalRosterSize);
     }
 
+    // Doing this with a small delay ensures we don't "click through" elements into other ones that shouldn't be active for that click
     public void changeUIState(Current_UI_State newState)
     {
+        uiState = Current_UI_State.Unknown;
+        if (activeCo == null)
+        {
+            activeCo = StartCoroutine(changeUIStateAfterDelay(newState, 0.25f));
+        } else
+        {
+            StopCoroutine(activeCo);
+            activeCo = StartCoroutine(changeUIStateAfterDelay(newState, 0.25f));
+        }
+    }
+
+    private IEnumerator changeUIStateAfterDelay(Current_UI_State newState, float time)
+    {
+        yield return new WaitForSeconds(time);
         uiState = newState;
         uiStateChanged.Invoke(uiState);
+        activeCo = null;
     }
 }

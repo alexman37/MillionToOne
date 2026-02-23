@@ -7,6 +7,7 @@ public class Inventory : MonoBehaviour
 {
     [SerializeField] GameObject clueCardTemplate;
     [SerializeField] GameObject actionCardTemplate;
+    [SerializeField] GameObject goldCardTemplate;
 
     private List<GameObject> clueCardInstances = new List<GameObject>();
     private List<GameObject> actionCardInstances = new List<GameObject>();
@@ -43,7 +44,7 @@ public class Inventory : MonoBehaviour
             pc.initialize();
         }
 
-        else
+        else if(c.cardType == CardType.ACTION)
         {
             newCard = GameObject.Instantiate(actionCardTemplate);
             ActionCard data = c as ActionCard;
@@ -58,6 +59,20 @@ public class Inventory : MonoBehaviour
             pc.initialize();
         }
 
+        else
+        {
+            newCard = GameObject.Instantiate(goldCardTemplate);
+            GoldCard data = c as GoldCard;
+            actionCardInstances.Add(newCard);
+
+            PhysicalActionCard pc = newCard.GetComponent<PhysicalActionCard>();
+            pc.setData(data);
+            data.setPhysical(pc);
+
+            pc.transform.parent = this.transform;
+            pc.transform.localPosition = new Vector3(700 + cardCount * 50, 0, -20 + -1 * cardCount);
+            pc.initialize();
+        }
         
     }
 

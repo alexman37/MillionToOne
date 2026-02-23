@@ -25,6 +25,9 @@ public class SelectionWindow : MonoBehaviour
     private int as_whatKinds;
     private bool as_cardsFaceUp;
 
+    // For converting the intern card
+    private PersonCard intern;
+
 
     // Start is called before the first frame update
     void Start()
@@ -43,6 +46,7 @@ public class SelectionWindow : MonoBehaviour
         AgentDisplay.selectedAgent_AS -= displayAfterAgentSelect;
     }
 
+
     public void prepareForDisplay(SelectionCardOutcome outcome, int times, int whatKinds, bool cardsFaceUp)
     {
         currentOutcome = outcome;
@@ -52,9 +56,10 @@ public class SelectionWindow : MonoBehaviour
         as_cardsFaceUp = cardsFaceUp;
     }
 
-    private void displayAfterAgentSelect(int agentId)
+    private void displayAfterAgentSelect(int agentId, AgentSelectReason selectReason)
     {
-        displaySelection(currentOutcome, allowedSelections, TurnDriver.instance.agentsInOrder[agentId], as_whatKinds, as_cardsFaceUp);
+        if(selectReason == AgentSelectReason.CardSelect)
+            displaySelection(currentOutcome, allowedSelections, TurnDriver.instance.agentsInOrder[agentId], as_whatKinds, as_cardsFaceUp);
     }
 
     /// <summary>
@@ -82,6 +87,7 @@ public class SelectionWindow : MonoBehaviour
             sCard.initialize(card, cardsFaceUp);
 
             go.transform.localPosition = defaultPos + new Vector3(3 * (count % maxInRow), -5 * (count / maxInRow), 0);
+            go.transform.localRotation = Quaternion.Euler(0, cardsFaceUp ? 0 : 180, 0);
 
             cardsInSelectionWindow.Add(sCard);
 
@@ -91,7 +97,13 @@ public class SelectionWindow : MonoBehaviour
 
     public void madeChoice(SelectionCard chosen)
     {
+        StartCoroutine(madeChoiceCo(chosen));
+    }
+
+    private IEnumerator madeChoiceCo(SelectionCard chosen)
+    {
         Card data = chosen.data;
+        int waitSec = 0;
 
         // Do something with the selection
         switch (instance.currentOutcome)
@@ -102,6 +114,11 @@ public class SelectionWindow : MonoBehaviour
                 break;
             case SelectionCardOutcome.VIEW:
                 chosen.Reveal();
+                if(data.cardType == CardType.CLUE)
+                {
+                    PlayerAgent.instance.onClueCardDeclassified(data as ClueCard);
+                }
+                waitSec = 2;
                 break;
             case SelectionCardOutcome.DECLASS:
                 // TODO no reward for this
@@ -112,11 +129,22 @@ public class SelectionWindow : MonoBehaviour
                 // TODO ensure transfer
                 break;
             case SelectionCardOutcome.TAKE_COPY:
-                data.acquire(PlayerAgent.instance);
-                // TODO ensure transfer
+                if(data.cardType == CardType.ACTION)
+                {
+                    ActionCard copy = new ActionCard(data as ActionCard);
+                    data.acquire(PlayerAgent.instance);
+                    PlayerAgent.instance.acquireCard(copy);
+                }
+                else if(data.cardType == CardType.GOLD)
+                {
+                    GoldCard copy = new GoldCard(data as GoldCard);
+                    data.acquire(PlayerAgent.instance);
+                    PlayerAgent.instance.acquireCard(copy);
+                }
                 break;
         }
 
+        yield return new WaitForSeconds(waitSec);
 
         foreach (SelectionCard sc in cardsInSelectionWindow)
         {

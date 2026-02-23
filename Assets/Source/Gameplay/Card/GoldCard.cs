@@ -10,10 +10,14 @@ using UnityEngine;
 /// </summary>
 public class GoldCard : PersonCard
 {
-    private PhysicalActionCard physical;
-
     public GoldCardType goldCardType;
 
+    public GoldCard(GoldCard template)
+    {
+        goldCardType = template.goldCardType;
+        cardType = CardType.GOLD;
+        // Physical aspect should be handled by the player agent acquiring the card
+    }
 
     public GoldCard(GoldCardType goldType)
     {
@@ -86,7 +90,7 @@ public enum GoldCardType
     ESCORT,                 // Skip 1 other player's next turn
     HACKER,                 // See 3 clue cards from another player
     THIEF,                  // Steal 1 card from another player
-    ASSASSAIN,              // Eliminate 1 other agent from the game
+    ASSASSAIN,              // Force a player to discard an action card. If they have none, they are eliminated (for this round)
     DOUBLE_AGENT,           // Reverse any action onto the player who started it
     MERCENARIES,            // Guess 8 additional targets this turn
     INSIDER                 // Confirm or deny your current clue form's accuracy

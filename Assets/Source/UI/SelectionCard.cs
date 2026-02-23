@@ -59,7 +59,7 @@ public class SelectionCard : ConditionalUI
     // When selected, if it is face down, reveal to other players
     public void Reveal()
     {
-        if (faceUp)
+        if (!faceUp)
         {
             transform.parent.localRotation = Quaternion.Euler(0, 0, 0);
             faceUp = true;
@@ -91,6 +91,7 @@ public class SelectionCard : ConditionalUI
         if(activeUI)
         {
             // Pass along
+            Total_UI.instance.changeUIState(Current_UI_State.GenTransition);
             SelectionWindow.instance.madeChoice(this);
         }
     }

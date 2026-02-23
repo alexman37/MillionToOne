@@ -16,10 +16,14 @@ public abstract class Agent
 
     public int targetGuessCount = 1;
     public int askAroundCount = 1;
+    public bool blocked = false;   // blocked by Escort
+    public bool dead = false;      // killed by Assassain
 
     public RosterConstraints rosterConstraints;
 
     public bool isPlayer = false;
+
+    public static event Action afterAgentSelected = () => { };
 
 
     /// <summary>
@@ -30,19 +34,21 @@ public abstract class Agent
     /// <summary>
     /// Give the agent a card in the initial deal
     /// </summary>
-    public abstract int startingDealtCard(ClueCard card);
+    public virtual int startingDealtCard(ClueCard card)
+    {
+        card.owner = this;
+        return inventory.Count;
+    }
 
     /// <summary>
     /// Give the agent a card.
     /// Return the number of cards in hand afterwards
     /// </summary>
-    public abstract int acquireCard(Card card);
-
-    /// <summary>
-    /// Give the agent several cards.
-    /// Return the number of cards in hand afterwards
-    /// </summary>
-    public abstract int acquireCards(List<Card> cards);
+    public virtual int acquireCard(Card card)
+    {
+        card.owner = this;
+        return inventory.Count;
+    }
 
     /// <summary>
     /// The agent loses a card in their hand.
@@ -83,7 +89,7 @@ public abstract class Agent
     /// <summary>
     /// Guess one of the target's characteristics for rewards
     /// </summary>
-    public abstract void guessTarget(int characterId, bool correct);
+    public abstract void guessTarget(int characterId);
 
     /// <summary>
     /// Agent uses their special ability
@@ -103,5 +109,19 @@ public abstract class Agent
     public int getCardsCount()
     {
         return inventory.Count;
+    }
+
+    public abstract void onBlocked();
+
+    public abstract void onAssassinated();
+
+    public void onAgentSelected(int id, AgentSelectReason selectionReason)
+    {
+        if(id == this.id)
+        {
+            if (selectionReason == AgentSelectReason.Escort)         onBlocked();
+            else if (selectionReason == AgentSelectReason.Assassain) onAssassinated();
+            afterAgentSelected.Invoke();
+        }
     }
 }

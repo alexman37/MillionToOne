@@ -17,7 +17,7 @@ public class TurnDriver : MonoBehaviour
     private int currTurn;  // from 0-num agents
 
     public List<ClueCard> clueCardDeck;
-    public List<ActionCard> actionCardDeck;
+    public List<PersonCard> actionCardDeck;
 
 
     // TODO make doable for many
@@ -57,24 +57,36 @@ public class TurnDriver : MonoBehaviour
     private void generateDeck(Roster rost)
     {
         clueCardDeck = new List<ClueCard>();
-        actionCardDeck = new List<ActionCard>();
+        actionCardDeck = new List<PersonCard>();
 
         // Add to deck: All action card types
+        actionCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
+        actionCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
+        actionCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
+
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+
+        actionCardDeck.Add(new ActionCard(ActionCardType.ENFORCER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
+        actionCardDeck.Add(new ActionCard(ActionCardType.ENFORCER));
+
+        
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+
         actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
         actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
         actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
 
-        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
-        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
-        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
+        actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
+        actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
 
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
-
-        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
-        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
-        actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
 
 
         // Get properties of target
@@ -143,7 +155,7 @@ public class TurnDriver : MonoBehaviour
     public void nextInLine()
     {
         currTurn = (currTurn + 1) % agentsInOrder.Count;
-
+        Debug.Log("Marking player " + currTurn + " as ready ");
         agentsInOrder[currTurn].markAsReady();
     }
 
@@ -151,7 +163,7 @@ public class TurnDriver : MonoBehaviour
     {
         if(actionCardDeck.Count > 0)
         {
-            ActionCard next = actionCardDeck[0];
+            PersonCard next = actionCardDeck[0];
             actionCardDeck.RemoveAt(0);
 
             agentsInOrder[currTurn].acquireCard(next);

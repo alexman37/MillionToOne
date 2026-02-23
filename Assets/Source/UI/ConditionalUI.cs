@@ -34,6 +34,7 @@ public enum Current_UI_State
     Unknown,
     PlayerTurn,
     CPUTurn,
+    GenTransition, // Generic Transition / Animation that usually allows for nothing
     SelectionWindow,
     AgentSelection,
     GuessingCPD,

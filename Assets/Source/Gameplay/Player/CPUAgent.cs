@@ -28,6 +28,8 @@ public class CPUAgent : Agent
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
+        AgentDisplay.selectedAgent_AS += onAgentSelected;
+        Agent.afterAgentSelected += afterAgentSelectedF;
     }
 
     ~CPUAgent()
@@ -35,10 +37,25 @@ public class CPUAgent : Agent
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
+        AgentDisplay.selectedAgent_AS -= onAgentSelected;
+        Agent.afterAgentSelected -= afterAgentSelectedF;
     }
 
     public override void markAsReady()
     {
+        if(dead)
+        {
+            Debug.LogWarning("Skipped CPU " + agentName + "'s turn, they are dead");
+            endOfTurn();
+            return;
+        } 
+        else if(blocked)
+        {
+            Debug.LogWarning("Skipped CPU " + agentName + "'s turn, they are blocked.");
+            blocked = false;
+            endOfTurn();
+            return;
+        } 
         askAroundCount = 1;
         targetGuessCount = 1;
 
@@ -50,6 +67,8 @@ public class CPUAgent : Agent
 
     public override int startingDealtCard(ClueCard card)
     {
+        base.startingDealtCard(card);
+
         inventory.Add(card);
         cpuGotCard.Invoke(id, card, inventory.Count);
 
@@ -63,6 +82,8 @@ public class CPUAgent : Agent
 
     public override int acquireCard(Card card)
     {
+        base.acquireCard(card);
+
         if (card.cardType == CardType.CLUE)
         {
             ClueCard cc = card as ClueCard;
@@ -81,13 +102,7 @@ public class CPUAgent : Agent
         cpuGotCard.Invoke(id, card, recruits.Count);
         Debug.Log("CPU player " + agentName + " acquires card: " + card);
 
-        return inventory.Count;
-
-    }
-
-    public override int acquireCards(List<Card> cards)
-    {
-        throw new NotImplementedException();
+        return card.cardType == CardType.CLUE ? inventory.Count : recruits.Count;
     }
 
     public override void loseCard(Card card)
@@ -118,7 +133,7 @@ public class CPUAgent : Agent
 
             Debug.Log("CPU declassified " + clueCard);
 
-            cpuTurnOver.Invoke();
+            endOfTurn();
         }
         else
         {
@@ -192,7 +207,7 @@ public class CPUAgent : Agent
         guessTargetCharacteristic(cpdType, cat, wasCorrect);
     }
 
-    public override void guessTarget(int characterId, bool correct)
+    public override void guessTarget(int characterId)
     {
         
     }
@@ -200,6 +215,11 @@ public class CPUAgent : Agent
     public override void useAbility()
     {
 
+    }
+
+    private void endOfTurn()
+    {
+        cpuTurnOver.Invoke();
     }
 
     // CPU handles their constraints locally.
@@ -219,6 +239,31 @@ public class CPUAgent : Agent
         }
     }
 
+    public override void onBlocked()
+    {
+        Debug.Log("Blocked player");
+        blocked = true;
+    }
+
+    public override void onAssassinated()
+    {
+        if (recruits.Count > 0)
+        {
+            Debug.Log("Forced player to give up an action card");
+            // TODO card select
+        }
+        else
+        {
+            Debug.Log("Eliminated player");
+            dead = true;
+        }
+    }
+
+    private void afterAgentSelectedF()
+    {
+        endOfTurn();
+    }
+
 
 
 
@@ -228,6 +273,6 @@ public class CPUAgent : Agent
     public void skipTurn()
     {
         Debug.Log("Skipping CPU " + agentName + "'s turn.");
-        cpuTurnOver.Invoke();
+        endOfTurn();
     }
 }

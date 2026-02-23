@@ -146,7 +146,7 @@ public class CPUAgentLogic
                 break;
 
             case LogicActionType.Guess_Target:
-                selfAgent.guessTarget(getRandomTargetID(), false);
+                selfAgent.guessTarget(getRandomTargetID());
                 break;
 
             case LogicActionType.Ask_Around:

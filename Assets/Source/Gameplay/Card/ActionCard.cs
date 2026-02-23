@@ -10,10 +10,14 @@ using UnityEngine;
 /// </summary>
 public class ActionCard : PersonCard
 {
-    private PhysicalActionCard physical;
-
     public ActionCardType actionCardType;
 
+
+    public ActionCard(ActionCard template)
+    {
+        cardType = CardType.ACTION;
+        actionCardType = template.actionCardType;
+    }
 
     public ActionCard(ActionCardType actionType)
     {
@@ -40,22 +44,6 @@ public class ActionCard : PersonCard
     public override void play()
     {
         Debug.Log("Playing action card " + ToString() + " for agent " + owner);
-    }
-
-    // The Intern card uses this to convert itself into another action card.
-    public PersonCard convert(PersonCard pc)
-    {
-        if(pc is ActionCard)
-        {
-            ActionCard ac = pc as ActionCard;
-            actionCardType = ac.actionCardType;
-            physical.reinit(ac);
-            return this;
-        } else
-        {
-            GoldCard gc = pc as GoldCard;
-            return GoldCard.convertIntern(gc.goldCardType, physical);
-        }
     }
 
     public override string ToString()

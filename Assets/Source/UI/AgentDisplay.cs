@@ -7,6 +7,8 @@ using System;
 
 public class AgentDisplay : ConditionalUI
 {
+    public static AgentSelectReason selectionReason = AgentSelectReason.CardSelect;
+
     public Image portrait;
     public TextMeshProUGUI agentName;
     public TextMeshProUGUI playerProgress;
@@ -26,7 +28,7 @@ public class AgentDisplay : ConditionalUI
     public static event Action deselectedAgent_PT = () => { };
 
     // Selected an agent after using an action card - Will use the action card on them
-    public static event Action<int> selectedAgent_AS = (_) => { };
+    public static event Action<int, AgentSelectReason> selectedAgent_AS = (_,__) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -97,13 +99,24 @@ public class AgentDisplay : ConditionalUI
     {
         if(activeUI)
         {
-            selected = true;
-            bottom.sprite = selectedSpr;
-
             if(Total_UI.uiState == Current_UI_State.PlayerTurn)
-                selectedAgent_PT.Invoke(agent.id);
+            {
+                if (PlayerAgent.instance.askAroundCount > 0)
+                {
+                    selected = true;
+                    bottom.sprite = selectedSpr;
+                    selectedAgent_PT.Invoke(agent.id);
+                }
+                else
+                {
+                    Debug.LogWarning("Cannot ask around anymore. Out of uses.");
+                }
+            }
+                
             else if (Total_UI.uiState == Current_UI_State.AgentSelection)
-                selectedAgent_AS.Invoke(agent.id);
+            {
+                selectedAgent_AS.Invoke(agent.id, selectionReason);
+            }
         }
     }
 
@@ -135,4 +148,11 @@ public class AgentDisplay : ConditionalUI
             else OnSelect();
         }
     }
+}
+
+public enum AgentSelectReason
+{
+    CardSelect,
+    Escort,
+    Assassain
 }

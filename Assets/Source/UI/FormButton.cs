@@ -67,7 +67,7 @@ public class FormButton : ConditionalUI
         TargetCharGuess.playerGuessesTargetProperty += updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent_PT += askAroundForAgent;
         AgentDisplay.deselectedAgent_PT += stopAskingAround;
-        RosterForm.completedAskAround += stopAskingAround;
+        RosterForm.askAroundCancelled += stopAskingAround;
     }
 
     private void OnDisable()
@@ -77,7 +77,7 @@ public class FormButton : ConditionalUI
         TargetCharGuess.playerGuessesTargetProperty -= updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent_PT -= askAroundForAgent;
         AgentDisplay.deselectedAgent_PT -= stopAskingAround;
-        RosterForm.completedAskAround -= stopAskingAround;
+        RosterForm.askAroundCancelled -= stopAskingAround;
     }
 
     /// <summary>
@@ -213,7 +213,6 @@ public class FormButton : ConditionalUI
     /// </summary>
     private void updateConstraintFromTargetGuess(CPD_Type cpdType, string cat, bool wasCorrect)
     {
-        if (!activeUI) return;
         if (this.cpdType == cpdType && this.category == cat)
         {
             // Correct choice: Update everything

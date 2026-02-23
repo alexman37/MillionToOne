@@ -144,7 +144,6 @@ public class Roster
         for (int i = 0; i <= UI_Roster.CHARACTERS_TO_SHOW; i++)
         {
             int simId = SimulatedID.getRandomSimulatedID(RosterConstraints.NO_CONSTRAINTS, currentRosterIDs, simulatedCurrentRosterSize);
-            Debug.Log("SIM ID gen: " + simId);
 
             shownRoster.Add(new Character(i, simId));
 

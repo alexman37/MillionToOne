@@ -39,6 +39,9 @@ public class PlayerAgent : Agent
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
         CharacterCard.charCardClicked += guessTarget;
+        RosterForm.askAroundCompleted += completedAskAround;
+        AgentDisplay.selectedAgent_AS += onAgentSelected;
+        Agent.afterAgentSelected += afterAgentSelectedF;
     }
 
     ~PlayerAgent()
@@ -47,10 +50,27 @@ public class PlayerAgent : Agent
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
         CharacterCard.charCardClicked -= guessTarget;
+        RosterForm.askAroundCompleted -= completedAskAround;
+        AgentDisplay.selectedAgent_AS -= onAgentSelected;
+        Agent.afterAgentSelected -= afterAgentSelectedF;
     }
 
     public override void markAsReady()
     {
+        if (dead)
+        {
+            Debug.LogWarning("Skipped player's turn, they are dead");
+            endOfTurn();
+            return;
+        }
+        if (blocked)
+        {
+            Debug.LogWarning("Skipped player's turn, they are blocked.");
+            blocked = false;
+            endOfTurn();
+            return;
+        }
+
         askAroundCount = 1;
         targetGuessCount = 1;
         isYourTurn = true;
@@ -60,6 +80,8 @@ public class PlayerAgent : Agent
 
     public override int startingDealtCard(ClueCard card)
     {
+        base.startingDealtCard(card);
+
         inventory.Add(card);
         playerGotCard.Invoke(card, inventory.Count);
         updateFormWithCard.Invoke(card);
@@ -72,6 +94,8 @@ public class PlayerAgent : Agent
 
     public override int acquireCard(Card card)
     {
+        base.acquireCard(card);
+
         if(card.cardType == CardType.CLUE)
         {
             ClueCard cc = card as ClueCard;
@@ -89,13 +113,7 @@ public class PlayerAgent : Agent
         updateFormWithCard.Invoke(card);
         Debug.Log("The player acquires card: " + card);
 
-        return inventory.Count;
-
-    }
-
-    public override int acquireCards(List<Card> cards)
-    {
-        throw new NotImplementedException();
+        return card.cardType == CardType.CLUE ? inventory.Count : recruits.Count;
     }
 
     public override void loseCard(Card card)
@@ -110,6 +128,11 @@ public class PlayerAgent : Agent
         {
             PersonCard pc = card as PersonCard;
             int cardex = recruits.IndexOf(pc);
+            foreach(PersonCard poc in recruits)
+            {
+                Debug.Log("*** FOUND person " + poc);
+            }
+            Debug.Log("*** Cardex " + cardex);
             recruits.RemoveAt(cardex);
             playerLostCard.Invoke(pc, cardex);
         }
@@ -138,8 +161,13 @@ public class PlayerAgent : Agent
             bool willLoseCard = true;
 
             pc.play();
+            loseCard(card);
 
-            if(pc is ActionCard)
+            // Most of the time when we have to select an agent, we take one of their cards
+            // Assume that until proven otherwise
+            AgentDisplay.selectionReason = AgentSelectReason.CardSelect;
+
+            if (pc is ActionCard)
             {
                 ActionCard ac = pc as ActionCard;
                 switch (ac.actionCardType)
@@ -163,8 +191,6 @@ public class PlayerAgent : Agent
                         break;
                     case ActionCardType.INTERN:
                         SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE_COPY, 1, this, 1, true);
-                        willLoseCard = false;
-                        //ac.convert(recruits[randIndexConverter]);
                         break;
                 }
             }
@@ -174,12 +200,12 @@ public class PlayerAgent : Agent
                 switch (gc.goldCardType)
                 {
                     case GoldCardType.ESCORT:
+                        AgentDisplay.selectionReason = AgentSelectReason.Escort;
                         Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        // TODO block them
                         break;
                     case GoldCardType.ASSASSAIN:
+                        AgentDisplay.selectionReason = AgentSelectReason.Assassain;
                         Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        // TODO kill them
                         break;
                     case GoldCardType.MERCENARIES:
                         targetGuessCount += 8;
@@ -196,11 +222,6 @@ public class PlayerAgent : Agent
                         // TODO tough one...
                         break;
                 }
-            }
-
-            if(willLoseCard)
-            {
-                loseCard(card);
             }
         }
         
@@ -251,17 +272,27 @@ public class PlayerAgent : Agent
         endOfTurn();
     }
 
-    public override void guessTarget(int characterId, bool correct)
+    public override void guessTarget(int characterId)
     {
-        // TODO obv. gotta do more than just click/respond
-        if(correct)
+        bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
+        if(targetGuessCount > 0)
         {
-            Debug.Log("YOU WIN!");
-            // TODO
+            targetGuessCount--;
+            // TODO obv. gotta do more than just click/respond
+            if (correct)
+            {
+                Debug.Log("YOU WIN!");
+                // TODO
+            }
+            else
+            {
+                Debug.Log("Wrong guy!");
+                if(targetGuessCount == 0)
+                    endOfTurn();
+            }
         } else
         {
-            Debug.Log("Wrong guy! Your turn is over");
-            endOfTurn();
+            Debug.LogWarning("Out of target guesses. The turn should have ended already.");
         }
     }
 
@@ -272,8 +303,6 @@ public class PlayerAgent : Agent
 
     private void endOfTurn()
     {
-        // Immediately change UI state off of player state, allow for no funny business
-        Total_UI.instance.changeUIState(Current_UI_State.Unknown);
         playerTurnOver.Invoke();
     }
 
@@ -293,5 +322,39 @@ public class PlayerAgent : Agent
                 rosterConstraints.addConstraint(cc.cpdType, cc.category, true);
             }
         }
+    }
+
+    public override void onBlocked()
+    {
+        Debug.Log("Blocked player");
+        blocked = true;
+    }
+
+    public override void onAssassinated()
+    {
+        if(recruits.Count > 0)
+        {
+            Debug.Log("Forced player to give up an action card");
+            // TODO card select
+        } else
+        {
+            Debug.Log("Eliminated player");
+            dead = true;
+        }
+    }
+
+
+
+
+    // Misc
+
+    void completedAskAround()
+    {
+        askAroundCount -= 1;
+    }
+
+    private void afterAgentSelectedF()
+    {
+        endOfTurn();
     }
 }

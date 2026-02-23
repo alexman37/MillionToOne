@@ -4317,6 +4317,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clueCardTemplate: {fileID: 3606045529386250512, guid: 376f9792fcf8e9e4e81afef2f23a629a, type: 3}
   actionCardTemplate: {fileID: 2174561379911067505, guid: f5ce0f60d49e3ef4b9e6e1b9ef027a65, type: 3}
+  goldCardTemplate: {fileID: 7763872702617404634, guid: dd5a66cfc107e534f8d1692b4a3e5fc1, type: 3}
 --- !u!114 &1531752816 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 717887571430192239, guid: f305e2eabd260cf4da80388b46eea77f, type: 3}
