@@ -110,7 +110,7 @@ public class CPUAgentLogic
         // 6. The CPU's single best "Ask Around" request, which is enough of a PITA to calculate / track that we
         //    should only consider this for now.
         AAMatrix.Inquiry inq = askAroundMatrix.getBestInquiry(1);
-        Debug.Log(inq);
+        Debug.Log("Best inquiry: " + inq);
 
         // TODO insertion sort?
         rankedLogicActions.Sort();

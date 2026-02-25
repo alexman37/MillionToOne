@@ -41,7 +41,6 @@ public class PlayerAgent : Agent
         CharacterCard.charCardClicked += guessTarget;
         RosterForm.askAroundCompleted += completedAskAround;
         AgentDisplay.selectedAgent_AS += onAgentSelected;
-        Agent.afterAgentSelected += afterAgentSelectedF;
     }
 
     ~PlayerAgent()
@@ -52,7 +51,6 @@ public class PlayerAgent : Agent
         CharacterCard.charCardClicked -= guessTarget;
         RosterForm.askAroundCompleted -= completedAskAround;
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
-        Agent.afterAgentSelected -= afterAgentSelectedF;
     }
 
     public override void markAsReady()
@@ -103,13 +101,16 @@ public class PlayerAgent : Agent
 
             updateConstraintsFromCard(cc);
             playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
+            playerGotCard.Invoke(card, inventory.Count);
         } else
         {
             PersonCard pc = card as PersonCard;
             recruits.Add(pc);
+
+            playerGotCard.Invoke(card, recruits.Count);
         }
 
-        playerGotCard.Invoke(card, recruits.Count);
         updateFormWithCard.Invoke(card);
         Debug.Log("The player acquires card: " + card);
 
@@ -219,7 +220,9 @@ public class PlayerAgent : Agent
                         Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
                         break;
                     case GoldCardType.INSIDER:
-                        // TODO tough one...
+                        bool verified = RosterForm.instance.VerifyForm();
+                        if (verified) Debug.Log("The form was correct!");
+                        else Debug.Log("Something in the form was wrong");
                         break;
                 }
             }
@@ -301,7 +304,7 @@ public class PlayerAgent : Agent
 
     }
 
-    private void endOfTurn()
+    public override void endOfTurn()
     {
         playerTurnOver.Invoke();
     }
@@ -351,10 +354,5 @@ public class PlayerAgent : Agent
     void completedAskAround()
     {
         askAroundCount -= 1;
-    }
-
-    private void afterAgentSelectedF()
-    {
-        endOfTurn();
     }
 }

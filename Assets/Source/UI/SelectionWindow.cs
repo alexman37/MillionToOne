@@ -59,7 +59,9 @@ public class SelectionWindow : MonoBehaviour
     private void displayAfterAgentSelect(int agentId, AgentSelectReason selectReason)
     {
         if(selectReason == AgentSelectReason.CardSelect)
+        {
             displaySelection(currentOutcome, allowedSelections, TurnDriver.instance.agentsInOrder[agentId], as_whatKinds, as_cardsFaceUp);
+        }
     }
 
     /// <summary>
@@ -67,6 +69,7 @@ public class SelectionWindow : MonoBehaviour
     /// </summary>
     public void displaySelection(SelectionCardOutcome outcome, int times, Agent agent, int whatKinds, bool cardsFaceUp)
     {
+        Debug.Log("Display selection...");
         Total_UI.instance.changeUIState(Current_UI_State.SelectionWindow);
         container.SetActive(true);
 
@@ -126,7 +129,7 @@ public class SelectionWindow : MonoBehaviour
                 break;
             case SelectionCardOutcome.TAKE:
                 data.acquire(PlayerAgent.instance);
-                // TODO ensure transfer
+                PlayerAgent.instance.acquireCard(data);
                 break;
             case SelectionCardOutcome.TAKE_COPY:
                 if(data.cardType == CardType.ACTION)
@@ -144,17 +147,25 @@ public class SelectionWindow : MonoBehaviour
                 break;
         }
 
-        yield return new WaitForSeconds(waitSec);
+        allowedSelections--;
 
-        foreach (SelectionCard sc in cardsInSelectionWindow)
+        if(allowedSelections <= 0)
         {
-            Destroy(sc.transform.parent.gameObject);
+            yield return new WaitForSeconds(waitSec);
+
+            foreach (SelectionCard sc in cardsInSelectionWindow)
+            {
+                Destroy(sc.transform.parent.gameObject);
+            }
+
+            cardsInSelectionWindow.Clear();
+
+            container.SetActive(false);
+            Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
+        } else
+        {
+            Total_UI.instance.changeUIState(Current_UI_State.SelectionWindow);
         }
-
-        cardsInSelectionWindow.Clear();
-
-        container.SetActive(false);
-        Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
     }
 
     public enum SelectionCardOutcome

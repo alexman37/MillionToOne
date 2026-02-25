@@ -115,13 +115,22 @@ public abstract class Agent
 
     public abstract void onAssassinated();
 
+    public abstract void endOfTurn();
+
     public void onAgentSelected(int id, AgentSelectReason selectionReason)
     {
         if(id == this.id)
         {
-            if (selectionReason == AgentSelectReason.Escort)         onBlocked();
-            else if (selectionReason == AgentSelectReason.Assassain) onAssassinated();
-            afterAgentSelected.Invoke();
+            if (selectionReason == AgentSelectReason.Escort)
+            {
+                onBlocked();
+                endOfTurn();
+            }
+            else if (selectionReason == AgentSelectReason.Assassain)
+            {
+                onAssassinated();
+                endOfTurn();
+            }
         }
     }
 }

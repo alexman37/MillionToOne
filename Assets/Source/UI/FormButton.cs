@@ -13,7 +13,7 @@ using TMPro;
 /// </summary>
 public class FormButton : ConditionalUI
 {
-    FormButtonState state;
+    public FormButtonState state;
     public CPD_Type cpdType; // which CPD is this Formbutton acting on?
     public string category; // which category is this FormButton tracking for the given CPD?
 

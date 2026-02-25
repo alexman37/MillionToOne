@@ -29,7 +29,6 @@ public class CPUAgent : Agent
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
         AgentDisplay.selectedAgent_AS += onAgentSelected;
-        Agent.afterAgentSelected += afterAgentSelectedF;
     }
 
     ~CPUAgent()
@@ -38,7 +37,6 @@ public class CPUAgent : Agent
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
-        Agent.afterAgentSelected -= afterAgentSelectedF;
     }
 
     public override void markAsReady()
@@ -217,7 +215,7 @@ public class CPUAgent : Agent
 
     }
 
-    private void endOfTurn()
+    public override void endOfTurn()
     {
         cpuTurnOver.Invoke();
     }
@@ -257,11 +255,6 @@ public class CPUAgent : Agent
             Debug.Log("Eliminated player");
             dead = true;
         }
-    }
-
-    private void afterAgentSelectedF()
-    {
-        endOfTurn();
     }
 
 

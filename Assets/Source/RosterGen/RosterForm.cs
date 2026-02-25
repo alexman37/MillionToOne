@@ -17,6 +17,8 @@ public class RosterForm : MonoBehaviour
     CPD[] formFields; // the list of form fields. There should be one for each CONSTRAINABLE CPD.
                       // (other CPDs can exist and be irrelevant in terms of sorting - such as face.)
 
+    private List<FormButtonGroup> formGroups = new List<FormButtonGroup>();
+
     // form buttons
     [SerializeField] private Sprite unfilled;
     [SerializeField] private Sprite manualNo;
@@ -100,6 +102,8 @@ public class RosterForm : MonoBehaviour
         RectTransform container = next.GetComponent<Image>().rectTransform;
         container.sizeDelta = new Vector2(container.rect.width, totalHeight + 10);
         nextFormGroupOffset += totalHeight + 20;
+
+        formGroups.Add(formGroup);
     }
 
 
@@ -140,8 +144,26 @@ public class RosterForm : MonoBehaviour
         askAroundCompleted.Invoke();
     }
 
+    // The main ability of the "Insider" action card
+    public bool VerifyForm()
+    {
+        Character target = TurnDriver.instance.currentRoster.getTargetAsCharacter();
+        foreach(FormButtonGroup group in formGroups)
+        {
+            foreach(FormButton field in group.formButtons)
+            {
+                if (field.state != FormButtonState.Unknown && buttonStateAsBool(field.state) != (target.getCategoryofCharacteristic(field.cpdType) == field.category))
+                    return false;
+            }
+        }
+        return true;
+    }
 
-
+    // Assumes Unknowns filtered out
+    private bool buttonStateAsBool(FormButtonState state)
+    {
+        return state == FormButtonState.Confirmed;
+    }
 
 
 
