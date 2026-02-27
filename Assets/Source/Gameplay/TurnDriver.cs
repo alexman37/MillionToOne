@@ -60,15 +60,16 @@ public class TurnDriver : MonoBehaviour
         actionCardDeck = new List<PersonCard>();
 
         // Add to deck: All action card types
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
 
         actionCardDeck.Add(new GoldCard(GoldCardType.THIEF));
         actionCardDeck.Add(new GoldCard(GoldCardType.THIEF));
+
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
 
         actionCardDeck.Add(new GoldCard(GoldCardType.HACKER));
         actionCardDeck.Add(new GoldCard(GoldCardType.HACKER));

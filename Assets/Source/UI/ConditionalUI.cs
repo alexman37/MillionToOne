@@ -36,6 +36,7 @@ public enum Current_UI_State
     CPUTurn,
     GenTransition, // Generic Transition / Animation that usually allows for nothing
     SelectionWindow,
+    ReactionWindow,
     AgentSelection,
     GuessingCPD,
     TargetSelection

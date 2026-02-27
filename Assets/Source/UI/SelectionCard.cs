@@ -14,6 +14,7 @@ public class SelectionCard : ConditionalUI
 
     [SerializeField] private Image selectedSpr;
 
+    private bool reaction = false;
     private bool faceUp;
 
     public Card data;
@@ -21,7 +22,7 @@ public class SelectionCard : ConditionalUI
     // Start is called before the first frame update
     void Start()
     {
-        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.SelectionWindow };
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.SelectionWindow, Current_UI_State.ReactionWindow };
     }
 
     private void OnEnable()
@@ -90,9 +91,19 @@ public class SelectionCard : ConditionalUI
     {
         if(activeUI)
         {
-            // Pass along
-            Total_UI.instance.changeUIState(Current_UI_State.GenTransition);
-            SelectionWindow.instance.madeChoice(this);
+            if(Total_UI.uiState == Current_UI_State.SelectionWindow)
+            {
+                // Pass along
+                Total_UI.instance.changeUIState(Current_UI_State.GenTransition);
+                SelectionWindow.instance.madeChoice(this);
+            }
+            // Reaction windows function similarly
+            else
+            {
+                // Pass along
+                Total_UI.instance.changeUIState(Current_UI_State.GenTransition);
+                SelectionWindow.instance.madeChoiceReaction(this);
+            }
         }
     }
 }

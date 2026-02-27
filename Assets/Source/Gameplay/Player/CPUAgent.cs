@@ -220,6 +220,11 @@ public class CPUAgent : Agent
         cpuTurnOver.Invoke();
     }
 
+    public override void promptForReaction()
+    {
+        throw new NotImplementedException();
+    }
+
     // CPU handles their constraints locally.
     private void updateConstraintsFromCard(Card receivedCard)
     {

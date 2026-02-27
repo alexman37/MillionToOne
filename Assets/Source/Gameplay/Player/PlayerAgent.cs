@@ -16,15 +16,15 @@ public class PlayerAgent : Agent
     public static event Action playerTurnOver = () => { };
 
 
-    // Singleton. Do not allow more than one
     public PlayerAgent()
     {
         // TODO player's name
         agentName = "Player";
 
-        id = 0; // There can be only one...?
+        id = 0;
 
-        if(instance == null)
+        // Singleton. Do not allow more than one
+        if (instance == null)
         {
             instance = this;
         } else
@@ -53,8 +53,10 @@ public class PlayerAgent : Agent
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
     }
 
+    // Initial actions before the player's turn.
     public override void markAsReady()
     {
+        // Skip forever if dead. Skip once if blocked.
         if (dead)
         {
             Debug.LogWarning("Skipped player's turn, they are dead");
@@ -76,6 +78,7 @@ public class PlayerAgent : Agent
         Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
     }
 
+    // Dealt a card at the start of the game
     public override int startingDealtCard(ClueCard card)
     {
         base.startingDealtCard(card);
@@ -90,6 +93,7 @@ public class PlayerAgent : Agent
         return inventory.Count;
     }
 
+    // Acquires a card at any point in the game
     public override int acquireCard(Card card)
     {
         base.acquireCard(card);
@@ -117,6 +121,7 @@ public class PlayerAgent : Agent
         return card.cardType == CardType.CLUE ? inventory.Count : recruits.Count;
     }
 
+    // Lose/use a card at any point: remove it
     public override void loseCard(Card card)
     {
         if(card is ClueCard)
@@ -129,16 +134,12 @@ public class PlayerAgent : Agent
         {
             PersonCard pc = card as PersonCard;
             int cardex = recruits.IndexOf(pc);
-            foreach(PersonCard poc in recruits)
-            {
-                Debug.Log("*** FOUND person " + poc);
-            }
-            Debug.Log("*** Cardex " + cardex);
             recruits.RemoveAt(cardex);
             playerLostCard.Invoke(pc, cardex);
         }
     }
 
+    // Use a card
     public override void playCard(Card card)
     {
         if(card.cardType == CardType.CLUE)
@@ -159,77 +160,15 @@ public class PlayerAgent : Agent
         {
             PersonCard pc = card as PersonCard;
 
-            bool willLoseCard = true;
-
             pc.play();
             loseCard(card);
 
-            // Most of the time when we have to select an agent, we take one of their cards
-            // Assume that until proven otherwise
-            AgentDisplay.selectionReason = AgentSelectReason.CardSelect;
-
-            if (pc is ActionCard)
-            {
-                ActionCard ac = pc as ActionCard;
-                switch (ac.actionCardType)
-                {
-                    case ActionCardType.CENSOR:
-                        SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.REDACTION, 1, this, 0, true);
-                        break;
-                    case ActionCardType.SIDEKICK:
-                        askAroundCount += 1;
-                        break;
-                    case ActionCardType.ANALYST:
-                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 1, 2, false);
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case ActionCardType.LAWYER:
-                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.DECLASS, 1, 0, false);
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case ActionCardType.ENFORCER:
-                        targetGuessCount += 2;
-                        break;
-                    case ActionCardType.INTERN:
-                        SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE_COPY, 1, this, 1, true);
-                        break;
-                }
-            }
-            else if(pc is GoldCard)
-            {
-                GoldCard gc = pc as GoldCard;
-                switch (gc.goldCardType)
-                {
-                    case GoldCardType.ESCORT:
-                        AgentDisplay.selectionReason = AgentSelectReason.Escort;
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case GoldCardType.ASSASSAIN:
-                        AgentDisplay.selectionReason = AgentSelectReason.Assassain;
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case GoldCardType.MERCENARIES:
-                        targetGuessCount += 8;
-                        break;
-                    case GoldCardType.HACKER:
-                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 3, 2, false);
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case GoldCardType.THIEF:
-                        SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.TAKE, 1, 2, false);
-                        Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                        break;
-                    case GoldCardType.INSIDER:
-                        bool verified = RosterForm.instance.VerifyForm();
-                        if (verified) Debug.Log("The form was correct!");
-                        else Debug.Log("Something in the form was wrong");
-                        break;
-                }
-            }
+            ActionHandler_PA.handlePlayedAction(pc);
         }
         
     }
 
+    // When a clue card anywhere has been declassified
     public override void onClueCardDeclassified(ClueCard cc)
     {
         if(!cc.redacted)
@@ -240,6 +179,7 @@ public class PlayerAgent : Agent
         }
     }
 
+    // Ask an agent for information
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
     {
         // Assume the agent you are asking is always a CPU.
@@ -254,6 +194,7 @@ public class PlayerAgent : Agent
         }
     }
 
+    // Guess target characteristic
     public override void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)
     {
         base.guessTargetCharacteristic(cpdType, cat, wasCorrect);
@@ -275,6 +216,7 @@ public class PlayerAgent : Agent
         endOfTurn();
     }
 
+    // Guesses a target
     public override void guessTarget(int characterId)
     {
         bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
@@ -299,14 +241,24 @@ public class PlayerAgent : Agent
         }
     }
 
+    // Use ability
     public override void useAbility()
     {
 
     }
 
+    // When turn is over do these actions
     public override void endOfTurn()
     {
+        isYourTurn = false;
         playerTurnOver.Invoke();
+    }
+
+    // Ask this player if they would like to use a reaction card to block an action on them
+    // (even if they don't actually have anything for it)
+    public override void promptForReaction(PersonCard withCard)
+    {
+        SelectionWindow.instance.displayReaction(withCard, this);
     }
 
     // CPU handles their constraints locally.
@@ -327,12 +279,14 @@ public class PlayerAgent : Agent
         }
     }
 
+    // When blocked, do this
     public override void onBlocked()
     {
         Debug.Log("Blocked player");
         blocked = true;
     }
 
+    // When assassinated, do this
     public override void onAssassinated()
     {
         if(recruits.Count > 0)
@@ -350,6 +304,7 @@ public class PlayerAgent : Agent
 
 
     // Misc
+
 
     void completedAskAround()
     {

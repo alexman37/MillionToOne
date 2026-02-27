@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Appears when the player uses an Action card that requires selecting a card from someone's hand.
 /// </summary>
-public class SelectionWindow : MonoBehaviour
+public class SelectionWindow : ConditionalUI
 {
     public static SelectionWindow instance;
 
@@ -28,12 +28,16 @@ public class SelectionWindow : MonoBehaviour
     // For converting the intern card
     private PersonCard intern;
 
+    // For reactions
+    private PersonCard actionCardAtStake;
+
 
     // Start is called before the first frame update
     void Start()
     {
         if (instance == null) instance = this;
         else Destroy(this);
+        allowedGameStates = new HashSet<Current_UI_State>() { Current_UI_State.SelectionWindow, Current_UI_State.ReactionWindow };
     }
 
     private void OnEnable()
@@ -83,9 +87,15 @@ public class SelectionWindow : MonoBehaviour
         int count = 0;
         foreach (Card card in cardsToGet)
         {
-            GameObject go = GameObject.Instantiate(card.cardType == CardType.CLUE ? 
-                selectionCardTemplate_clue : selectionCardTemplate_action,
-                this.transform);
+            GameObject template;
+            switch (card.cardType)
+            {
+                case CardType.CLUE: template = selectionCardTemplate_clue; break;
+                case CardType.ACTION: template = selectionCardTemplate_action; break;
+                default: template = selectionCardTemplate_gold; break;
+            }
+            GameObject go = GameObject.Instantiate(template, this.transform);
+
             SelectionCard sCard = go.GetComponentInChildren<SelectionCard>();
             sCard.initialize(card, cardsFaceUp);
 
@@ -128,6 +138,7 @@ public class SelectionWindow : MonoBehaviour
                 (data as ClueCard).owner.playCard(data);
                 break;
             case SelectionCardOutcome.TAKE:
+                data.owner.loseCard(data);
                 data.acquire(PlayerAgent.instance);
                 PlayerAgent.instance.acquireCard(data);
                 break;
@@ -168,12 +179,104 @@ public class SelectionWindow : MonoBehaviour
         }
     }
 
+    public void displayReaction(PersonCard withCard, Agent agent)
+    {
+        Debug.Log("Display reaction selection...");
+        Total_UI.instance.changeUIState(Current_UI_State.ReactionWindow);
+        container.SetActive(true);
+
+        actionCardAtStake = withCard;
+
+        List<Card> cardsToGet = new List<Card>();
+
+        int count = 0;
+        foreach (Card card in cardsToGet)
+        {
+            if(isReactionCard(card))
+            {
+                GameObject template;
+                switch (card.cardType)
+                {
+                    case CardType.ACTION: template = selectionCardTemplate_action; break;
+                    default: template = selectionCardTemplate_gold; break;
+                }
+                GameObject go = GameObject.Instantiate(template, this.transform);
+
+                SelectionCard sCard = go.GetComponentInChildren<SelectionCard>();
+                sCard.initialize(card, true);
+
+                go.transform.localPosition = defaultPos + new Vector3(3 * (count % maxInRow), -5 * (count / maxInRow), 0);
+
+                cardsInSelectionWindow.Add(sCard);
+
+                count++;
+            }
+        }
+    }
+
+    public void madeChoiceReaction(SelectionCard chosen)
+    {
+        StartCoroutine(madeChoiceReactionCo(chosen));
+    }
+
+    private IEnumerator madeChoiceReactionCo(SelectionCard chosen)
+    {
+        int waitSec = 1;
+
+        // Do something with the selection
+        switch (instance.currentOutcome)
+        {
+            case SelectionCardOutcome.BLOCK:
+                Debug.Log("Would block the action here");
+                break;
+            case SelectionCardOutcome.REVERSE:
+                Debug.Log("Would reverse the action here");
+                break;
+            default:
+                Debug.Log("Must allow action");
+                break;
+
+                // TODO assassination = lose a card
+        }
+
+        yield return new WaitForSeconds(waitSec);
+
+        foreach (SelectionCard sc in cardsInSelectionWindow)
+        {
+            Destroy(sc.transform.parent.gameObject);
+        }
+
+        cardsInSelectionWindow.Clear();
+
+        container.SetActive(false);
+        Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
+    }
+
+    private bool isReactionCard(Card c)
+    {
+        if(c is ActionCard)
+        {
+            return (c as ActionCard).actionCardType == ActionCardType.BODYGUARD;
+        } 
+        else if(c is GoldCard)
+        {
+            return (c as GoldCard).goldCardType == GoldCardType.DOUBLE_AGENT;
+        }
+        return false;
+    }
+
     public enum SelectionCardOutcome
     {
+        // Complete actions
         REDACTION,
         VIEW,
         DECLASS,
         TAKE,
-        TAKE_COPY
+        TAKE_COPY,
+        // Reactions
+        ALLOW,
+        BLOCK,
+        REVERSE,
+        LOSE
     }
 }

@@ -117,6 +117,8 @@ public abstract class Agent
 
     public abstract void endOfTurn();
 
+    public abstract void promptForReaction(PersonCard withCard);
+
     public void onAgentSelected(int id, AgentSelectReason selectionReason)
     {
         if(id == this.id)
