@@ -119,20 +119,11 @@ public abstract class Agent
 
     public abstract void promptForReaction(PersonCard withCard);
 
-    public void onAgentSelected(int id, AgentSelectReason selectionReason)
+    public void onAgentSelected(int id, PersonCard withCard)
     {
         if(id == this.id)
         {
-            if (selectionReason == AgentSelectReason.Escort)
-            {
-                onBlocked();
-                endOfTurn();
-            }
-            else if (selectionReason == AgentSelectReason.Assassain)
-            {
-                onAssassinated();
-                endOfTurn();
-            }
+            promptForReaction(withCard);
         }
     }
 }

@@ -1,18 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class ActionHandler_CPU : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public static void handlePlayedAction(PersonCard playedCard)
     {
-        
+        throw new NotImplementedException();
     }
 
-    // Update is called once per frame
-    void Update()
+    public static void handleFinalPlayedAction(PersonCard playedCard, Agent onto)
     {
-        
+        throw new NotImplementedException();
     }
 }

@@ -14,6 +14,8 @@ public class CPUAgent : Agent
     public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
     public static event Action cpuTurnOver = () => { };
 
+    public static event Action<Agent, Agent, ReactionVerdict> cpuReacts = (a1,a2,v) => { };
+
     public CPUAgent(int id, string name)
     {
         this.id = id;
@@ -220,9 +222,11 @@ public class CPUAgent : Agent
         cpuTurnOver.Invoke();
     }
 
-    public override void promptForReaction()
+    public override void promptForReaction(PersonCard withCard)
     {
-        throw new NotImplementedException();
+        Debug.Log("CPU prompted for action");
+        // TODO
+        cpuReacts.Invoke(withCard.owner, this, ReactionVerdict.ALLOW);
     }
 
     // CPU handles their constraints locally.

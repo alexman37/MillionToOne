@@ -7,8 +7,6 @@ using System;
 
 public class AgentDisplay : ConditionalUI
 {
-    public static AgentSelectReason selectionReason = AgentSelectReason.CardSelect;
-
     public Image portrait;
     public TextMeshProUGUI agentName;
     public TextMeshProUGUI playerProgress;
@@ -28,7 +26,7 @@ public class AgentDisplay : ConditionalUI
     public static event Action deselectedAgent_PT = () => { };
 
     // Selected an agent after using an action card - Will use the action card on them
-    public static event Action<int, AgentSelectReason> selectedAgent_AS = (_,__) => { };
+    public static event Action<int, PersonCard> selectedAgent_AS = (_,__) => { };
 
     // Start is called before the first frame update
     void Start()
@@ -113,9 +111,13 @@ public class AgentDisplay : ConditionalUI
                 }
             }
                 
+            // If the player is preparing to use an action card on someone,
+            // Tell the agent who's being target so they can
+            // Process whether or not they can do anything about it.
             else if (Total_UI.uiState == Current_UI_State.AgentSelection)
             {
-                selectedAgent_AS.Invoke(agent.id, selectionReason);
+                Debug.Log("Sent AS action");
+                selectedAgent_AS.Invoke(agent.id, TurnDriver.instance.queuedCard);
             }
         }
     }
@@ -148,11 +150,4 @@ public class AgentDisplay : ConditionalUI
             else OnSelect();
         }
     }
-}
-
-public enum AgentSelectReason
-{
-    CardSelect,
-    Escort,
-    Assassain
 }

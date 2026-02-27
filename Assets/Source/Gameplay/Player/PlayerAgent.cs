@@ -258,6 +258,7 @@ public class PlayerAgent : Agent
     // (even if they don't actually have anything for it)
     public override void promptForReaction(PersonCard withCard)
     {
+        Debug.Log("Player prompted for action");
         SelectionWindow.instance.displayReaction(withCard, this);
     }
 

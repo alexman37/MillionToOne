@@ -1,20 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 // Handle what to do when you play an action card
 // (from the player's perspective)
-public class ActionHandler_PA
+public static class ActionHandler_PA
 {
     public static PlayerAgent playerAgent;
 
+
+
+    // Called when the player first uses an action card -
+    // Some cards require selecting an agent first, and prompting that agent for if they can react to it
     public static void handlePlayedAction(PersonCard playedCard)
     {
         if (playerAgent == null) playerAgent = PlayerAgent.instance;
-
-        // Most of the time when we have to select an agent, we take one of their cards
-        // Assume that until proven otherwise
-        AgentDisplay.selectionReason = AgentSelectReason.CardSelect;
 
         if (playedCard is ActionCard)
         {
@@ -28,11 +29,8 @@ public class ActionHandler_PA
                     playerAgent.askAroundCount += 1;
                     break;
                 case ActionCardType.ANALYST:
-                    SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 1, 2, false);
-                    Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                    break;
                 case ActionCardType.LAWYER:
-                    SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.DECLASS, 1, 0, false);
+                    TurnDriver.instance.queuedCard = playedCard;
                     Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
                     break;
                 case ActionCardType.ENFORCER:
@@ -49,28 +47,60 @@ public class ActionHandler_PA
             switch (gc.goldCardType)
             {
                 case GoldCardType.ESCORT:
-                    AgentDisplay.selectionReason = AgentSelectReason.Escort;
-                    Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                    break;
                 case GoldCardType.ASSASSAIN:
-                    AgentDisplay.selectionReason = AgentSelectReason.Assassain;
+                case GoldCardType.HACKER:
+                case GoldCardType.THIEF:
+                    TurnDriver.instance.queuedCard = playedCard;
                     Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
                     break;
                 case GoldCardType.MERCENARIES:
                     playerAgent.targetGuessCount += 8;
                     break;
-                case GoldCardType.HACKER:
-                    SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.VIEW, 3, 2, false);
-                    Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                    break;
-                case GoldCardType.THIEF:
-                    SelectionWindow.instance.prepareForDisplay(SelectionWindow.SelectionCardOutcome.TAKE, 1, 2, false);
-                    Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
-                    break;
                 case GoldCardType.INSIDER:
                     bool verified = RosterForm.instance.VerifyForm();
                     if (verified) Debug.Log("The form was correct!");
                     else Debug.Log("Something in the form was wrong");
+                    break;
+            }
+        }
+    }
+
+
+    // Called when the player's target confirms they cannot respond to an action card.
+    // Now they can proceed with their original intent.
+    public static void handleFinalPlayedAction(PersonCard playedCard, Agent onto)
+    {
+        if (playerAgent == null) playerAgent = PlayerAgent.instance;
+
+        if (playedCard is ActionCard)
+        {
+            ActionCard ac = playedCard as ActionCard;
+            switch (ac.actionCardType)
+            {
+                case ActionCardType.ANALYST:
+                    SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.VIEW, 1, onto, 2, false);
+                    break;
+                case ActionCardType.LAWYER:
+                    SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.DECLASS, 1, onto, 0, false);
+                    break;
+            }
+        }
+        else if (playedCard is GoldCard)
+        {
+            GoldCard gc = playedCard as GoldCard;
+            switch (gc.goldCardType)
+            {
+                case GoldCardType.ESCORT:
+                    onto.onBlocked();
+                    break;
+                case GoldCardType.ASSASSAIN:
+                    onto.onAssassinated();
+                    break;
+                case GoldCardType.HACKER:
+                    SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.VIEW, 3, onto, 2, false);
+                    break;
+                case GoldCardType.THIEF:
+                    SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE, 1, onto, 2, false);
                     break;
             }
         }

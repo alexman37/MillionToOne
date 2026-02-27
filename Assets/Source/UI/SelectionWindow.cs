@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 /// <summary>
 /// Appears when the player uses an Action card that requires selecting a card from someone's hand.
@@ -8,6 +9,8 @@ using UnityEngine;
 public class SelectionWindow : ConditionalUI
 {
     public static SelectionWindow instance;
+
+    private static PlayerAgent playerAgent;
 
     [SerializeField] GameObject container;
     [SerializeField] GameObject selectionCardTemplate_clue;
@@ -25,11 +28,8 @@ public class SelectionWindow : ConditionalUI
     private int as_whatKinds;
     private bool as_cardsFaceUp;
 
-    // For converting the intern card
-    private PersonCard intern;
 
-    // For reactions
-    private PersonCard actionCardAtStake;
+    public static event Action<Agent, Agent, ReactionVerdict> playerReacts = (a1,a2,v) => { };
 
 
     // Start is called before the first frame update
@@ -42,12 +42,10 @@ public class SelectionWindow : ConditionalUI
 
     private void OnEnable()
     {
-        AgentDisplay.selectedAgent_AS += displayAfterAgentSelect;
     }
 
     private void OnDisable()
     {
-        AgentDisplay.selectedAgent_AS -= displayAfterAgentSelect;
     }
 
 
@@ -60,19 +58,13 @@ public class SelectionWindow : ConditionalUI
         as_cardsFaceUp = cardsFaceUp;
     }
 
-    private void displayAfterAgentSelect(int agentId, AgentSelectReason selectReason)
-    {
-        if(selectReason == AgentSelectReason.CardSelect)
-        {
-            displaySelection(currentOutcome, allowedSelections, TurnDriver.instance.agentsInOrder[agentId], as_whatKinds, as_cardsFaceUp);
-        }
-    }
-
     /// <summary>
     /// whatKinds: 0 = clue cards only, 1 = action cards only, 2 = all
     /// </summary>
     public void displaySelection(SelectionCardOutcome outcome, int times, Agent agent, int whatKinds, bool cardsFaceUp)
     {
+        if (playerAgent == null) playerAgent = PlayerAgent.instance;
+
         Debug.Log("Display selection...");
         Total_UI.instance.changeUIState(Current_UI_State.SelectionWindow);
         container.SetActive(true);
@@ -123,13 +115,13 @@ public class SelectionWindow : ConditionalUI
         {
             case SelectionCardOutcome.REDACTION:
                 (data as ClueCard).redact();
-                PlayerAgent.instance.playCard(data);
+                playerAgent.playCard(data);
                 break;
             case SelectionCardOutcome.VIEW:
                 chosen.Reveal();
                 if(data.cardType == CardType.CLUE)
                 {
-                    PlayerAgent.instance.onClueCardDeclassified(data as ClueCard);
+                    playerAgent.onClueCardDeclassified(data as ClueCard);
                 }
                 waitSec = 2;
                 break;
@@ -139,21 +131,21 @@ public class SelectionWindow : ConditionalUI
                 break;
             case SelectionCardOutcome.TAKE:
                 data.owner.loseCard(data);
-                data.acquire(PlayerAgent.instance);
-                PlayerAgent.instance.acquireCard(data);
+                data.acquire(playerAgent);
+                playerAgent.acquireCard(data);
                 break;
             case SelectionCardOutcome.TAKE_COPY:
                 if(data.cardType == CardType.ACTION)
                 {
                     ActionCard copy = new ActionCard(data as ActionCard);
-                    data.acquire(PlayerAgent.instance);
-                    PlayerAgent.instance.acquireCard(copy);
+                    data.acquire(playerAgent);
+                    playerAgent.acquireCard(copy);
                 }
                 else if(data.cardType == CardType.GOLD)
                 {
                     GoldCard copy = new GoldCard(data as GoldCard);
-                    data.acquire(PlayerAgent.instance);
-                    PlayerAgent.instance.acquireCard(copy);
+                    data.acquire(playerAgent);
+                    playerAgent.acquireCard(copy);
                 }
                 break;
         }
@@ -181,11 +173,11 @@ public class SelectionWindow : ConditionalUI
 
     public void displayReaction(PersonCard withCard, Agent agent)
     {
+        if (playerAgent == null) playerAgent = PlayerAgent.instance;
+
         Debug.Log("Display reaction selection...");
         Total_UI.instance.changeUIState(Current_UI_State.ReactionWindow);
         container.SetActive(true);
-
-        actionCardAtStake = withCard;
 
         List<Card> cardsToGet = new List<Card>();
 
@@ -219,25 +211,20 @@ public class SelectionWindow : ConditionalUI
         StartCoroutine(madeChoiceReactionCo(chosen));
     }
 
+    public void madeNoReaction()
+    {
+        StartCoroutine(madeChoiceReactionCo(null));
+    }
+
     private IEnumerator madeChoiceReactionCo(SelectionCard chosen)
     {
+        Agent playingAgent = TurnDriver.instance.queuedCard.owner;
         int waitSec = 1;
 
-        // Do something with the selection
-        switch (instance.currentOutcome)
-        {
-            case SelectionCardOutcome.BLOCK:
-                Debug.Log("Would block the action here");
-                break;
-            case SelectionCardOutcome.REVERSE:
-                Debug.Log("Would reverse the action here");
-                break;
-            default:
-                Debug.Log("Must allow action");
-                break;
-
-                // TODO assassination = lose a card
-        }
+        // TODO dispatch the action to TurnDriver
+        if (chosen == null)                               playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.ALLOW);
+        else if (chosen.data.cardType == CardType.ACTION) playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.BLOCK);
+        else if (chosen.data.cardType == CardType.GOLD)   playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.REVERSE);
 
         yield return new WaitForSeconds(waitSec);
 
@@ -273,10 +260,13 @@ public class SelectionWindow : ConditionalUI
         DECLASS,
         TAKE,
         TAKE_COPY,
-        // Reactions
-        ALLOW,
-        BLOCK,
-        REVERSE,
-        LOSE
+        LOSE          // Lose a card after assassination
     }
+}
+
+public enum ReactionVerdict
+{
+    ALLOW,
+    BLOCK,
+    REVERSE,
 }

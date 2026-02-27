@@ -20,6 +20,10 @@ public class TurnDriver : MonoBehaviour
     public List<PersonCard> actionCardDeck;
 
 
+    // For action / reaction chains. What card is trying to be played?
+    public PersonCard queuedCard;
+
+
     // TODO make doable for many
     private void Start()
     {
@@ -37,12 +41,18 @@ public class TurnDriver : MonoBehaviour
         RosterGen.rosterCreationDone += onRosterCreation;
         PlayerAgent.playerTurnOver += nextInLine;
         CPUAgent.cpuTurnOver += nextInLine;
+
+        SelectionWindow.playerReacts += executeActionCard;
+        CPUAgent.cpuReacts += executeActionCard;
     }
 
     private void OnDisable()
     {
         RosterGen.rosterCreationDone -= onRosterCreation;
         PlayerAgent.playerTurnOver -= nextInLine;
+
+        SelectionWindow.playerReacts -= executeActionCard;
+        CPUAgent.cpuReacts -= executeActionCard;
     }
 
     private void onRosterCreation(Roster rost)
@@ -188,5 +198,25 @@ public class TurnDriver : MonoBehaviour
             Debug.LogWarning("No action cards left to deal!");
         }
         
+    }
+
+    public void executeActionCard(Agent playingAgent, Agent targetAgent, ReactionVerdict verdict) { 
+
+        switch(verdict)
+        {
+            // The player couldn't do anything about it, so continue as normal
+            case ReactionVerdict.ALLOW:
+                if (playingAgent.id == 0)     ActionHandler_PA.handleFinalPlayedAction(queuedCard, targetAgent);
+                else                          ActionHandler_CPU.handleFinalPlayedAction(queuedCard, targetAgent);
+                break;
+            case ReactionVerdict.BLOCK:
+                Debug.Log("The action was blocked by a bodyguard!");
+                break;
+            case ReactionVerdict.REVERSE:
+                queuedCard.owner = targetAgent;
+                if (targetAgent.id == 0)   ActionHandler_PA.handleFinalPlayedAction(queuedCard, playingAgent);
+                else                       ActionHandler_CPU.handleFinalPlayedAction(queuedCard, playingAgent);
+                break;
+        }
     }
 }
