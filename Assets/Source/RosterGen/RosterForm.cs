@@ -59,7 +59,7 @@ public class RosterForm : MonoBehaviour
         AgentDisplay.selectedAgent_PT += StartedAskingAround;
         AgentDisplay.deselectedAgent_PT += StoppedAskingAround;
         FormButton.addToAskAroundList += AddToAskFor;
-        FormButton.removeFromAskAroundList += AddToAskFor;
+        FormButton.removeFromAskAroundList += RemoveFromAskFor;
     }
 
     private void OnDisable()
@@ -67,7 +67,7 @@ public class RosterForm : MonoBehaviour
         AgentDisplay.selectedAgent_PT -= StartedAskingAround;
         AgentDisplay.deselectedAgent_PT -= StoppedAskingAround;
         FormButton.addToAskAroundList -= AddToAskFor;
-        FormButton.removeFromAskAroundList -= AddToAskFor;
+        FormButton.removeFromAskAroundList -= RemoveFromAskFor;
     }
 
     /// <summary>
@@ -136,6 +136,12 @@ public class RosterForm : MonoBehaviour
     {
         PlayerAgent.instance.askAgent(TurnDriver.instance.agentsInOrder[agentToAsk], askingFor);
         CompleteAskAround();
+
+    }
+
+    public bool canAskForMore()
+    {
+        return askingFor.Count < PlayerAgent.instance.getAskAroundLimit();
     }
 
     private void CompleteAskAround()

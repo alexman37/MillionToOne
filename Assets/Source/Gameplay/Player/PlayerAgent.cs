@@ -7,8 +7,6 @@ public class PlayerAgent : Agent
 {
     public static PlayerAgent instance;
 
-    bool isYourTurn = false;
-
     public static event Action<Card, int> playerGotCard = (_,n) => { };
     public static event Action<Card, int> playerLostCard = (_,n) => { };
     public static event Action<Card> updateFormWithCard = (_) => { };
@@ -38,7 +36,7 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints += clearConstraints;
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
-        CharacterCard.charCardClicked += guessTarget;
+        Roster.guessedWrongCharacter += guessTarget;
         RosterForm.askAroundCompleted += completedAskAround;
         AgentDisplay.selectedAgent_AS += onAgentSelected;
     }
@@ -48,7 +46,7 @@ public class PlayerAgent : Agent
         Roster.clearAllConstraints -= clearConstraints;
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
-        CharacterCard.charCardClicked -= guessTarget;
+        Roster.guessedWrongCharacter -= guessTarget;
         RosterForm.askAroundCompleted -= completedAskAround;
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
     }
@@ -216,28 +214,33 @@ public class PlayerAgent : Agent
         endOfTurn();
     }
 
-    // Guesses a target
+    // When a target has been guessed, do these actions
+    // Some are performed only if it's your turn
     public override void guessTarget(int characterId)
     {
-        bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
-        if(targetGuessCount > 0)
+        if(isYourTurn)
         {
-            targetGuessCount--;
-            // TODO obv. gotta do more than just click/respond
-            if (correct)
+            bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
+            if (targetGuessCount > 0)
             {
-                Debug.Log("YOU WIN!");
-                // TODO
+                targetGuessCount--;
+                // TODO obv. gotta do more than just click/respond
+                if (correct)
+                {
+                    Debug.Log("YOU WIN!");
+                    // TODO
+                }
+                else
+                {
+                    Debug.Log("Wrong guy!");
+                    if (targetGuessCount == 0)
+                        endOfTurn();
+                }
             }
             else
             {
-                Debug.Log("Wrong guy!");
-                if(targetGuessCount == 0)
-                    endOfTurn();
+                Debug.LogWarning("Out of target guesses. The turn should have ended already.");
             }
-        } else
-        {
-            Debug.LogWarning("Out of target guesses. The turn should have ended already.");
         }
     }
 

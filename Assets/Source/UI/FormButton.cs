@@ -283,9 +283,12 @@ public class FormButton : ConditionalUI
     private void addToAskAround()
     {
         if (!activeUI) return;
-        addToAskAroundList.Invoke((cpdType, category));
-        askAroundAsk.image.color = Color.green;
-        currentlyAskingAround = true;
+        if(RosterForm.instance.canAskForMore())
+        {
+            addToAskAroundList.Invoke((cpdType, category));
+            askAroundAsk.image.color = Color.green;
+            currentlyAskingAround = true;
+        }
     }
 
     private void removeFromAskAround()

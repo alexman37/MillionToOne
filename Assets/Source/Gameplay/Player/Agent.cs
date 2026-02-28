@@ -14,6 +14,7 @@ public abstract class Agent
     public List<PersonCard> recruits = new List<PersonCard>();
     public AgentAbility ability;
 
+    public bool isYourTurn = false;
     public int targetGuessCount = 1;
     public int askAroundCount = 1;
     public bool blocked = false;   // blocked by Escort
@@ -70,6 +71,11 @@ public abstract class Agent
     /// Agent asks another agent for information
     /// </summary>
     public abstract void askAgent(Agent asking, List<(CPD_Type, string)> inquiry);
+
+    public int getAskAroundLimit()
+    {
+        return recruits.Count + 1;
+    }
 
     /// <summary>
     /// Guess one of the target's characteristics for rewards

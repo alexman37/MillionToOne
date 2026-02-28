@@ -59,7 +59,7 @@ public class CPUAgentLogic
     {
         // 1. Skipping your turn, doing nothing.
         rankedLogicActions.Add(
-            new LogicAction(LogicActionType.Nothing, 0)
+            new LogicAction(LogicActionType.Nothing, 200)
         );
 
         foreach(Card c in selfAgent.inventory)

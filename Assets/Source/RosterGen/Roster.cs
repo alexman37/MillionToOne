@@ -20,6 +20,8 @@ public class Roster
     public List<Sprite> shownRosterSprites; // the sprites of the currently shown characters (for fast access).
     public HashSet<int> currentRosterIDs; // the simulated IDs of all characters we are currently showing.
 
+    private HashSet<int> charactersGuessedAsTarget;  // all characters the player has guessed as the target (never show them again)
+
     // Each agent has their own set of roster constraints they will apply to the general roster.
 
     public static List<CPD> cpdInstances;      // All CPD singletons
@@ -39,6 +41,7 @@ public class Roster
     public static event Action rosterReady;
     public static event Action<int> constrainedResult;
     public static event Action clearAllConstraints;
+    public static event Action<int> guessedWrongCharacter;
 
 
     // Optimization for "get Random simulated ID":
@@ -56,8 +59,10 @@ public class Roster
         if (constrainedResult == null) constrainedResult += (_) => { };
         if (rosterReady == null) rosterReady += () => { };
         if (clearAllConstraints == null) clearAllConstraints += () => { };
+        if (guessedWrongCharacter == null) guessedWrongCharacter += (_) => { };
 
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
+        CharacterCard.charCardClicked += GuessedCharacterAsTarget;
 
         // No need to recreate CPDs on each load
         if(cpdInstances == null)
@@ -82,6 +87,7 @@ public class Roster
             cpdByType = new Dictionary<CPD_Type, CPD>();
             simIDtourGuide = new List<int>();
             currentRosterIDs = new HashSet<int>();
+            charactersGuessedAsTarget = new HashSet<int>();
 
             // Set constrainables list
             for (int c = 0; c < cpdInstances.Count; c++)
@@ -119,6 +125,7 @@ public class Roster
     ~Roster()
     {
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
+        CharacterCard.charCardClicked -= GuessedCharacterAsTarget;
     }
 
     /// <summary>
@@ -229,15 +236,24 @@ public class Roster
         // Characters to show: first, choose any from the currently shown roster we'd like to keep.
         int count = 0;
         currentRosterIDs.Clear();
+        currentRosterIDs = new HashSet<int>(charactersGuessedAsTarget);
         for (int i = 0; i < Mathf.Min(UI_Roster.CHARACTERS_TO_SHOW, shownRoster.Count) && count < size; i++)
         {
-            if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, currConstraints))
+            // If we already guessed this character, do not allow it to be added to the roster view again
+            if (charactersGuessedAsTarget.Contains(shownRoster[i].simulatedId))
+            {
+                // pass
+            }
+            // If the character is unguessed and still meets constraints, keep it around
+            else if (SimulatedID.idMeetsConstraints(shownRoster[i].simulatedId, currConstraints))
             {
                 currentRosterIDs.Add(shownRoster[i].simulatedId);
                 newShownRoster.Add(shownRoster[i]);
                 shownRosterSprites[count] = shownRosterSprites[i];
                 count++;
-            } else
+            } 
+            // If the character no longer meets constraints, remove it
+            else
             {
                 currentRosterIDs.Remove(shownRoster[i].simulatedId);
             }
@@ -248,6 +264,18 @@ public class Roster
         {
             int simId = SimulatedID.getRandomSimulatedID(currConstraints, currentRosterIDs, simulatedCurrentRosterSize);
 
+
+            // When targets have been manually guessed, we don't show them anymore
+            // If a guessed target still meets all constraints, it will pass all checks but we don't want to show it.
+            // This leads to getRandomSimulatedID failing to find the final characters and returning -1
+            // It always short circuits when all other possibilities are exhausted - so we know just how many failed.
+            if (simId == -1)
+            {
+                simulatedCurrentRosterSize = i;
+                Debug.LogWarning("Shortened size is now " + simulatedCurrentRosterSize);
+                constrainedResult.Invoke(simulatedCurrentRosterSize);
+                break;
+            }
             shownRoster.Add(new Character(i, simId));
 
             shownRosterSprites[i] = CharSpriteGen.genSpriteFromLayers(shownRoster[i]);
@@ -286,6 +314,15 @@ public class Roster
             // Assuming all probabilities are equal.
             newRosterSize = Mathf.RoundToInt(cpdByType[tp].getProportionOfCategories(constraints.allCurrentConstraints[tp]) * (float)newRosterSize);
         }
+
+        // is there any way to optimize this? Hopefully the set of guessed chars never gets too big.
+        foreach (int guessedChar in charactersGuessedAsTarget)
+        {
+            if(SimulatedID.idMeetsConstraints(guessedChar, constraints))
+            {
+                newRosterSize--;
+            }
+        }
         
         return newRosterSize;
     }
@@ -301,6 +338,17 @@ public class Roster
         {
             PlayerAgent.instance.rosterConstraints.addConstraint(cpd.cpdType, exclude, false);
         }
+    }
+
+    /// <summary>
+    /// What to do when the player guesses a character as the target
+    /// </summary>
+    public void GuessedCharacterAsTarget(int guessId)
+    {
+        // TODO if wrong
+        charactersGuessedAsTarget.Add(guessId);
+        redrawRosterVis();
+        guessedWrongCharacter.Invoke(guessId);
     }
 
     public void DebugLogRoster()

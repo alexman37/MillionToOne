@@ -55,7 +55,9 @@ public class CPUAgent : Agent
             blocked = false;
             endOfTurn();
             return;
-        } 
+        }
+
+        isYourTurn = true;
         askAroundCount = 1;
         targetGuessCount = 1;
 
@@ -219,6 +221,7 @@ public class CPUAgent : Agent
 
     public override void endOfTurn()
     {
+        isYourTurn = false;
         cpuTurnOver.Invoke();
     }
 
