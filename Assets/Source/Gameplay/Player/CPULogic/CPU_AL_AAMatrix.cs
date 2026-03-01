@@ -9,33 +9,46 @@ using System;
 // ------------------------------
 public class AAMatrix
 {
-    int forId;
+    protected Agent selfAgent;
+    protected CPUInfoTracker infoTracker;
+    protected CPUPersonalityStats personalityStats;
 
     // Don't set these in constructor - they're probably not ready yet
     List<Agent> agentsInOrder;
     int numPlayers;
+
+    // Both keyscores and agentsPerKey can use this.
+    protected static Dictionary<CPD_Type, List<string>> catsPerCPD;
+    private static bool catsPerCPDinit = false;
 
     // How enticing it is to ask each agent about this key
     Dictionary<(CPD_Type cpdType, string cat), List<AgentScore>> agentsPerKey;
     // All keys, sorted in order from most to least enticing
     KeyScoreChart keyScoreChart;
 
-    public AAMatrix(int id)
+    public AAMatrix(Agent agent, CPUInfoTracker info, CPUPersonalityStats personality)
     {
-        forId = id;
+        selfAgent = agent;
+        infoTracker = info;
+        personalityStats = personality;
+
         agentsPerKey = new Dictionary<(CPD_Type cpdType, string cat), List<AgentScore>>();
 
-        keyScoreChart = new KeyScoreChart();
+        keyScoreChart = new KeyScoreChart(this);
     }
 
-    private void getGameData()
+    public void getGameData()
     {
         agentsInOrder = TurnDriver.instance.agentsInOrder;
         numPlayers = agentsInOrder.Count;
 
+        if (!catsPerCPDinit) catsPerCPD = new Dictionary<CPD_Type, List<string>>();
+
         int count = 0;
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
+            if(!catsPerCPDinit) catsPerCPD.Add(cpd.cpdType, new List<string>(cpd.categories));
+
             foreach (string category in cpd.categories)
             {
                 agentsPerKey.Add((cpd.cpdType, category), new List<AgentScore>());
@@ -44,19 +57,45 @@ public class AAMatrix
                 for (int i = 0; i < numPlayers; i++)
                 {
                     // The CPU should obviously never ask itself anything.
-                    agentsPerKey[(cpd.cpdType, category)].Add(new AgentScore(i, forId != i ? 1 : -99999));
+                    agentsPerKey[(cpd.cpdType, category)].Add(new AgentScore(i, selfAgent.id != i ? 1 : -99999));
                 }
 
-                keyScoreChart.keyscoreLookup.Add((cpd.cpdType, category), new KeyScore((cpd.cpdType, category), 1));
+                keyScoreChart.keyscoreLookup.Add((cpd.cpdType, category), new KeyScore((cpd.cpdType, category), getBaseKeyScore(cpd, category)));
             }
         }
+        catsPerCPDinit = true;
+    }
+
+    // Get the base score for a CPD at the start
+    // Currently depends on: CPD Reward
+    private float getBaseKeyScore(CPD cpd, string cat)
+    {
+        float value = 1;
+
+        // Rewards!
+        if(personalityStats.atLeast(CPUPersonalityTrait.Aggressive, 0f))
+        {
+            TargetCPDGuessReward reward = cpd.getGuessReward();
+            if(reward == TargetCPDGuessReward.ActionCard)
+            {
+                value += 3;
+            }
+            else if (reward == TargetCPDGuessReward.GoldCard)
+            {
+                value += 5;
+            }
+            else // No reward
+            {
+                value -= 2;
+            }
+        }
+
+        return value;
     }
 
     // Return what the CPU's single best "Ask Around" request is at the moment.
     public Inquiry getBestInquiry(int howManyAsks)
     {
-        if (agentsInOrder == null) getGameData();
-
         // Assume agents properly indexed
         Dictionary<int, float> agentScores = new Dictionary<int, float>();
         List<(CPD_Type, string)> bestKeys = new List<(CPD_Type, string)>();
@@ -95,6 +134,22 @@ public class AAMatrix
 
         float overallScore = maxValue; // TODO
         return new Inquiry(overallScore, agentsInOrder[bestAgent], bestKeys);
+    }
+
+    // Action when the CPU definitively learns a piece of information
+    public void learnedAboutCPD(CPD_Type cpdType, string cat, bool onTarget)
+    {
+        keyScoreChart.OnLearnedAboutCPD(cpdType, cat, onTarget);
+    }
+
+    public void cpdRevealed(CPD_Type cpdType)
+    {
+        keyScoreChart.OnCPDRevealed(cpdType);
+    }
+
+    public void closeToGuessingTarget()
+    {
+        keyScoreChart.UpdateUrgency();
     }
 
 
@@ -153,26 +208,84 @@ public class AAMatrix
         {
             return -1 * score.CompareTo((obj as KeyScore).score);
         }
+
+        public override string ToString()
+        {
+            return key.cpdType.ToString() + "::" + key.cat + " = " + score;
+        }
     }
 
     class KeyScoreChart
     {
         // For direct and easy access
+        private AAMatrix reference;
         public Dictionary<(CPD_Type, string), KeyScore> keyscoreLookup;
 
-        public KeyScoreChart()
+        public KeyScoreChart(AAMatrix refer)
         {
+            reference = refer;
             keyscoreLookup = new Dictionary<(CPD_Type, string), KeyScore>();
         }
 
         public void UpdateChart((CPD_Type, string) key, float newVal)
         {
-            keyscoreLookup[key].score = newVal;
+            if(keyscoreLookup.ContainsKey(key))
+                keyscoreLookup[key].score = newVal;
         }
 
         public void UpdateChartKeyBy((CPD_Type, string) key, float byAmount)
         {
-            keyscoreLookup[key].score += byAmount;
+            if (keyscoreLookup.ContainsKey(key))
+                keyscoreLookup[key].score += byAmount;
+        }
+
+        public void RemoveFromChart((CPD_Type, string) key)
+        {
+            keyscoreLookup.Remove(key);
+        }
+
+        // When learning information:
+        //    - Not on target: Make this property significantly less likely to be asked about, update all others positively.
+        //    - On target: Update entire CPD to be significantly less likely to be asked about.
+        public void OnLearnedAboutCPD(CPD_Type cpdType, string learnedCat, bool onTarget)
+        {
+            if(onTarget)
+            {
+                foreach(string cat in catsPerCPD[cpdType])
+                {
+                    if(cat == learnedCat)
+                        UpdateChartKeyBy((cpdType, cat), -100);
+                    else
+                        UpdateChartKeyBy((cpdType, cat), -50);
+                }
+            } else
+            {
+                foreach (string cat in catsPerCPD[cpdType])
+                {
+                    if (cat == learnedCat)
+                        UpdateChartKeyBy((cpdType, cat), -50);
+                    else
+                    {
+                        float numTotal = catsPerCPD[cpdType].Count;
+                        float numRemaining = reference.infoTracker.catsPossible[cpdType].Count;
+                        UpdateChartKeyBy((cpdType, cat), 5 * (1 + (1f - numRemaining) / numTotal));
+                    }
+                }
+            }
+        }
+
+        // When a CPD is revealed we want to remove it from the list of things
+        public void OnCPDRevealed(CPD_Type cpdType)
+        {
+            foreach (string cat in catsPerCPD[cpdType])
+            {
+                RemoveFromChart((cpdType, cat));
+            }
+        }
+
+        public void UpdateUrgency()
+        {
+
         }
 
         // Get N highest-scoring keys in the chart
@@ -206,7 +319,20 @@ public class AAMatrix
                 }
             }
 
+            DebugKeyscores();
             return lastGoodIndex > 0 ? highestScorers.GetRange(0, lastGoodIndex) : new List<KeyScore>();
+        }
+
+        public void DebugKeyscores()
+        {
+            string formatted = "";
+
+            foreach((CPD_Type, string) key in keyscoreLookup.Keys)
+            {
+                formatted = formatted + keyscoreLookup[key].ToString() + "\n";
+            }
+
+            Debug_CPULogicPrintout.instance.updateAAprintout(reference.selfAgent.id - 1, formatted);
         }
     }
 }

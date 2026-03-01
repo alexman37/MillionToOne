@@ -20,24 +20,16 @@ public class CPUAgentLogic
 {
     CPUAgent selfAgent;
     CPUInfoTracker infoTracker;
-    CPUPersonalityStats personalityStats;
 
     // CPU's current ordering of how good (or bad) it thinks each possible action would be.
     private List<LogicAction> rankedLogicActions;
-
-    // CPU's assessed options for asking around other CPU's
-    private AAMatrix askAroundMatrix;
 
     public CPUAgentLogic(CPUAgent agent)
     {
         selfAgent = agent;
         infoTracker = agent.infoTracker;
 
-        // TODO may want to load this from somewhere else, eventually
-        personalityStats = new CPUPersonalityStats(false);
-
         rankedLogicActions = new List<LogicAction>();
-        askAroundMatrix = new AAMatrix(selfAgent.id);
     }
 
 
@@ -114,7 +106,7 @@ public class CPUAgentLogic
 
         // 6. The CPU's single best "Ask Around" request, which is enough of a PITA to calculate / track that we
         //    should only consider this for now.
-        AAMatrix.Inquiry inq = askAroundMatrix.getBestInquiry(1);
+        AAMatrix.Inquiry inq = infoTracker.askAroundMatrix.getBestInquiry(1);
         rankedLogicActions.Add(new LogicAction_AskAround(inq.overallScore, inq.about, inq.askingAgent));
 
         // TODO insertion sort?
@@ -278,53 +270,81 @@ public class CPUAgentLogic
         Guess_Target,
         Ask_Around
     }
+}
 
 
 
 
-    // ------------------------------
-    // CPU Personality Traits...
-    // ------------------------------
+// ------------------------------
+// CPU Personality Traits...
+// ------------------------------
 
-    class CPUPersonalityStats
+public class CPUPersonalityStats
+{
+    public Dictionary<CPUPersonalityTrait, float> personalityTraits;
+
+    public CPUPersonalityStats(bool randomize)
     {
-        public Dictionary<CPUPersonalityTrait, float> personalityTraits;
+        personalityTraits = new Dictionary<CPUPersonalityTrait, float>();
 
-        public CPUPersonalityStats(bool randomize)
+        // If no base stats supplied, randomize them all
+        if (randomize)
         {
-            personalityTraits = new Dictionary<CPUPersonalityTrait, float>();
-
-            // If no base stats supplied, randomize them all
-            if(randomize)
-            {
-                personalityTraits.Add(CPUPersonalityTrait.Intelligence, Range(0, 1));
-                personalityTraits.Add(CPUPersonalityTrait.Deceptive, Range(0, 1));
-                personalityTraits.Add(CPUPersonalityTrait.Reckless, Range(0, 1));
-                personalityTraits.Add(CPUPersonalityTrait.Aggressive, Range(0, 1));
-                personalityTraits.Add(CPUPersonalityTrait.Secretive, Range(0, 1));
-                personalityTraits.Add(CPUPersonalityTrait.Grudgy, Range(0, 1));
-            }
-            else
-            {
-                personalityTraits.Add(CPUPersonalityTrait.Intelligence, 0);
-                personalityTraits.Add(CPUPersonalityTrait.Deceptive, 0);
-                personalityTraits.Add(CPUPersonalityTrait.Reckless, 0);
-                personalityTraits.Add(CPUPersonalityTrait.Aggressive, 0);
-                personalityTraits.Add(CPUPersonalityTrait.Secretive, 0);
-                personalityTraits.Add(CPUPersonalityTrait.Grudgy, 0);
-            }
+            personalityTraits.Add(CPUPersonalityTrait.Intelligence, Range(0, 1));
+            personalityTraits.Add(CPUPersonalityTrait.Deceptive, Range(0, 1));
+            personalityTraits.Add(CPUPersonalityTrait.Reckless, Range(0, 1));
+            personalityTraits.Add(CPUPersonalityTrait.Aggressive, Range(0, 1));
+            personalityTraits.Add(CPUPersonalityTrait.Secretive, Range(0, 1));
+            personalityTraits.Add(CPUPersonalityTrait.Grudgy, Range(0, 1));
+        }
+        else
+        {
+            personalityTraits.Add(CPUPersonalityTrait.Intelligence, 0);
+            personalityTraits.Add(CPUPersonalityTrait.Deceptive, 0);
+            personalityTraits.Add(CPUPersonalityTrait.Reckless, 0);
+            personalityTraits.Add(CPUPersonalityTrait.Aggressive, 0);
+            personalityTraits.Add(CPUPersonalityTrait.Secretive, 0);
+            personalityTraits.Add(CPUPersonalityTrait.Grudgy, 0);
         }
     }
 
-
-    // All traits from 0 - 1
-    enum CPUPersonalityTrait
+    public bool atLeast(CPUPersonalityTrait trait, float threshold)
     {
-        Intelligence,    // Chooses actions randomly -- everything is calculated
-        Deceptive,       // Straightforward -- Will try to deceive other players
-        Reckless,        // Cautious -- Willing to take risks
-        Aggressive,      // Minds own business -- Likes bringing down others
-        Secretive,       // Doesn't care about letting info slip -- prioritizes secrecy
-        Grudgy           // Will attack the leader -- will attack players who previously wronged them
+        return personalityTraits[trait] >= threshold;
     }
+
+    public bool below(CPUPersonalityTrait trait, float threshold)
+    {
+        return personalityTraits[trait] <= threshold;
+    }
+
+    public bool atLeastMany(List<(CPUPersonalityTrait trait, float threshold)> couples)
+    {
+        foreach((CPUPersonalityTrait trait, float threshold) couple in couples)
+        {
+            if (personalityTraits[couple.trait] < couple.threshold) return false;
+        }
+        return true;
+    }
+
+    public bool belowMany(List<(CPUPersonalityTrait trait, float threshold)> couples)
+    {
+        foreach ((CPUPersonalityTrait trait, float threshold) couple in couples)
+        {
+            if (personalityTraits[couple.trait] < couple.threshold) return false;
+        }
+        return true;
+    }
+}
+
+
+// All traits from 0 - 1
+public enum CPUPersonalityTrait
+{
+    Intelligence,    // Chooses actions randomly -- everything is calculated
+    Deceptive,       // Straightforward -- Will try to deceive other players
+    Reckless,        // Cautious -- Willing to take risks
+    Aggressive,      // Minds own business -- Likes bringing down others
+    Secretive,       // Doesn't care about letting info slip -- prioritizes secrecy
+    Grudgy           // Will attack the leader -- will attack players who previously wronged them
 }

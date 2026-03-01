@@ -48,22 +48,11 @@ public class TargetProperties : MonoBehaviour
             next.transform.localPosition = defaultTargetPosition + new Vector3(2 * i, 0, 0);
             TargetCard tc = next.GetComponentInChildren<TargetCard>();
 
-            int cpdDifficulty = cpd.categories.Count;
-            TargetCPDGuessReward reward;
-            if (cpdDifficulty > 5) reward = TargetCPDGuessReward.GoldCard;
-            else if (cpdDifficulty > 2) reward = TargetCPDGuessReward.ActionCard;
-            else reward = TargetCPDGuessReward.None;
+            TargetCPDGuessReward reward = cpd.getGuessReward();
 
             tc.initialize(i, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType), reward);
 
             targetCards.Add(tc);
         }
     }
-}
-
-public enum TargetCPDGuessReward
-{
-    None,
-    ActionCard,
-    GoldCard
 }

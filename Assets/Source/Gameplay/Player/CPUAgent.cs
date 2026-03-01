@@ -9,6 +9,9 @@ public class CPUAgent : Agent
     public CPUInfoTracker infoTracker;
     // Algorithm for deciding what to do on your turn.
     public CPUAgentLogic agentLogic;
+    // The CPU's unique set of personality traits, which changes many things about its behavior
+    // (See CPUAgentLogic for definition)
+    public CPUPersonalityStats personalityStats;
 
     public static event Action<int, Card, int> cpuGotCard = (_,__,n) => { };
     public static event Action<int, int> cpuUpdateProgress = (_, __) => { };
@@ -21,8 +24,11 @@ public class CPUAgent : Agent
         this.id = id;
         agentName = name;
 
+        personalityStats = new CPUPersonalityStats(false);
         infoTracker = new CPUInfoTracker(this);
         agentLogic = new CPUAgentLogic(this);
+
+        infoTracker.askAroundMatrix.getGameData();
 
         rosterConstraints = new RosterConstraints();
         rosterConstraints.clearAllConstraints(true);
@@ -199,7 +205,7 @@ public class CPUAgent : Agent
         cpuUpdateProgress.Invoke(id, TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
         if(wasCorrect)
         {
-            infoTracker.solvedCPDs.Add(cpdType);
+            infoTracker.CPDRevealed(cpdType, cat);
         }
     }
 

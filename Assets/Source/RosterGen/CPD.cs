@@ -111,6 +111,21 @@ public abstract class CPD
     {
         return ((float)(categories.Count - restrictedCats.Count) / (float)categories.Count);
     }
+
+    public TargetCPDGuessReward getGuessReward()
+    {
+        int cpdDifficulty = categories.Count;
+        if (cpdDifficulty > 5) return TargetCPDGuessReward.GoldCard;
+        else if (cpdDifficulty > 2) return TargetCPDGuessReward.ActionCard;
+        else return TargetCPDGuessReward.None;
+    }
+}
+
+public enum TargetCPDGuessReward
+{
+    None,
+    ActionCard,
+    GoldCard
 }
 
 

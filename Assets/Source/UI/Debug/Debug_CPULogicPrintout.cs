@@ -8,6 +8,7 @@ public class Debug_CPULogicPrintout : MonoBehaviour
     public static Debug_CPULogicPrintout instance;
 
     public TextMeshProUGUI[] printouts;
+    public TextMeshProUGUI[] aaPrintouts;
 
     // Start is called before the first frame update
     void Start()
@@ -19,5 +20,10 @@ public class Debug_CPULogicPrintout : MonoBehaviour
     public void updatePrintout(int index, string text)
     {
         printouts[index].text = text;
+    }
+
+    public void updateAAprintout(int index, string text)
+    {
+        aaPrintouts[index].text = text;
     }
 }
