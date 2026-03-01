@@ -11,46 +11,52 @@ public class AAMatrix
 {
     int forId;
 
+    // Don't set these in constructor - they're probably not ready yet
     List<Agent> agentsInOrder;
     int numPlayers;
 
     // How enticing it is to ask each agent about this key
     Dictionary<(CPD_Type cpdType, string cat), List<AgentScore>> agentsPerKey;
     // All keys, sorted in order from most to least enticing
-    List<KeyScore> sortedKeys;
+    KeyScoreChart keyScoreChart;
 
     public AAMatrix(int id)
     {
         forId = id;
         agentsPerKey = new Dictionary<(CPD_Type cpdType, string cat), List<AgentScore>>();
-        sortedKeys = new List<KeyScore>();
 
+        keyScoreChart = new KeyScoreChart();
+    }
+
+    private void getGameData()
+    {
         agentsInOrder = TurnDriver.instance.agentsInOrder;
         numPlayers = agentsInOrder.Count;
 
-
-        List<AgentScore> defaultAgentScores = new List<AgentScore>();
-        for (int i = 0; i < numPlayers; i++)
-        {
-            // The CPU should obviously never ask itself anything.
-            defaultAgentScores.Add(new AgentScore(agentsInOrder[i], id != i ? 1 : -99999));
-        }
-
+        int count = 0;
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
             foreach (string category in cpd.categories)
             {
-                agentsPerKey.Add((cpd.cpdType, category), new List<AgentScore>(defaultAgentScores));
-                sortedKeys.Add(new KeyScore((cpd.cpdType, category), 1));
+                agentsPerKey.Add((cpd.cpdType, category), new List<AgentScore>());
+                count++;
+
+                for (int i = 0; i < numPlayers; i++)
+                {
+                    // The CPU should obviously never ask itself anything.
+                    agentsPerKey[(cpd.cpdType, category)].Add(new AgentScore(i, forId != i ? 1 : -99999));
+                }
+
+                keyScoreChart.keyscoreLookup.Add((cpd.cpdType, category), new KeyScore((cpd.cpdType, category), 1));
             }
         }
     }
 
-
-
     // Return what the CPU's single best "Ask Around" request is at the moment.
     public Inquiry getBestInquiry(int howManyAsks)
     {
+        if (agentsInOrder == null) getGameData();
+
         // Assume agents properly indexed
         Dictionary<int, float> agentScores = new Dictionary<int, float>();
         List<(CPD_Type, string)> bestKeys = new List<(CPD_Type, string)>();
@@ -62,18 +68,19 @@ public class AAMatrix
         }
 
         // For each important key, find how good each player is to ask
+        List<KeyScore> topHits = keyScoreChart.GetTopN(howManyAsks);
         for (int k = 0; k < howManyAsks; k++)
         {
-            (CPD_Type, string) key = sortedKeys[k].key;
+            (CPD_Type, string) key = topHits[k].key;
             bestKeys.Add(key);
 
             for (int a = 0; a < numPlayers; a++)
             {
-                agentScores[a] += agentsPerKey[key][a].score;
+                agentScores[a] = agentScores[a] + agentsPerKey[key][a].score;
             }
         }
 
-        // Ask the overall best fit
+        // Ask the overall best agent to ask about this
         float maxValue = -99999;
         int bestAgent = -1;
 
@@ -86,8 +93,8 @@ public class AAMatrix
             }
         }
 
-        // Get keys only
-        return new Inquiry(agentsInOrder[bestAgent], bestKeys);
+        float overallScore = maxValue; // TODO
+        return new Inquiry(overallScore, agentsInOrder[bestAgent], bestKeys);
     }
 
 
@@ -95,11 +102,13 @@ public class AAMatrix
 
     public class Inquiry
     {
+        public float overallScore;
         public Agent askingAgent;
         public List<(CPD_Type, string)> about;
 
-        public Inquiry(Agent ask, List<(CPD_Type, string)> ab)
+        public Inquiry(float sc, Agent ask, List<(CPD_Type, string)> ab)
         {
+            overallScore = sc;
             askingAgent = ask;
             about = ab;
         }
@@ -112,12 +121,12 @@ public class AAMatrix
 
     class AgentScore : IComparable
     {
-        public Agent agent;
+        public int agentId;
         public float score;
 
-        public AgentScore(Agent a, float s)
+        public AgentScore(int aid, float s)
         {
-            agent = a;
+            agentId = aid;
             score = s;
         }
 
@@ -143,6 +152,61 @@ public class AAMatrix
         public int CompareTo(object obj)
         {
             return -1 * score.CompareTo((obj as KeyScore).score);
+        }
+    }
+
+    class KeyScoreChart
+    {
+        // For direct and easy access
+        public Dictionary<(CPD_Type, string), KeyScore> keyscoreLookup;
+
+        public KeyScoreChart()
+        {
+            keyscoreLookup = new Dictionary<(CPD_Type, string), KeyScore>();
+        }
+
+        public void UpdateChart((CPD_Type, string) key, float newVal)
+        {
+            keyscoreLookup[key].score = newVal;
+        }
+
+        public void UpdateChartKeyBy((CPD_Type, string) key, float byAmount)
+        {
+            keyscoreLookup[key].score += byAmount;
+        }
+
+        // Get N highest-scoring keys in the chart
+        public List<KeyScore> GetTopN(int numHits)
+        {
+            List<KeyScore> highestScorers = new List<KeyScore>();
+            for(int i = 0; i < numHits; i++)
+            {
+                highestScorers.Add(new KeyScore(((CPD_Type)0, ""), -1));
+            }
+
+            // Find highest scorers
+            foreach(KeyScore ks in keyscoreLookup.Values)
+            {
+                if (ks.CompareTo(highestScorers[numHits - 1]) < 0)
+                {
+                    // TODO optimize with binary insert, probably
+                    highestScorers.Add(ks);
+                    highestScorers.Sort();
+                    highestScorers.RemoveAt(numHits);
+                }
+            }
+
+            // Return all highest scorers greater than 0
+            int lastGoodIndex = -1;
+            for(int i = numHits - 1; i >= 0; i--) { 
+                if(highestScorers[i].score > 0)
+                {
+                    lastGoodIndex = i + 1;
+                    break;
+                }
+            }
+
+            return lastGoodIndex > 0 ? highestScorers.GetRange(0, lastGoodIndex) : new List<KeyScore>();
         }
     }
 }

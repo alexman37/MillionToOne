@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using static UnityEngine.Random;
 
 /// <summary>
 /// CPU Agent Logic determines how CPU Agents make their decisions.
@@ -19,6 +20,7 @@ public class CPUAgentLogic
 {
     CPUAgent selfAgent;
     CPUInfoTracker infoTracker;
+    CPUPersonalityStats personalityStats;
 
     // CPU's current ordering of how good (or bad) it thinks each possible action would be.
     private List<LogicAction> rankedLogicActions;
@@ -30,6 +32,9 @@ public class CPUAgentLogic
     {
         selfAgent = agent;
         infoTracker = agent.infoTracker;
+
+        // TODO may want to load this from somewhere else, eventually
+        personalityStats = new CPUPersonalityStats(false);
 
         rankedLogicActions = new List<LogicAction>();
         askAroundMatrix = new AAMatrix(selfAgent.id);
@@ -59,7 +64,7 @@ public class CPUAgentLogic
     {
         // 1. Skipping your turn, doing nothing.
         rankedLogicActions.Add(
-            new LogicAction(LogicActionType.Nothing, 200)
+            new LogicAction(LogicActionType.Nothing, 0)
         );
 
         foreach(Card c in selfAgent.inventory)
@@ -110,7 +115,7 @@ public class CPUAgentLogic
         // 6. The CPU's single best "Ask Around" request, which is enough of a PITA to calculate / track that we
         //    should only consider this for now.
         AAMatrix.Inquiry inq = askAroundMatrix.getBestInquiry(1);
-        Debug.Log("Best inquiry: " + inq);
+        rankedLogicActions.Add(new LogicAction_AskAround(inq.overallScore, inq.about, inq.askingAgent));
 
         // TODO insertion sort?
         rankedLogicActions.Sort();
@@ -123,6 +128,18 @@ public class CPUAgentLogic
     /// </summary>
     private void chooseAction()
     {
+        // Debugging, if you want it
+        if (true)
+        {
+            string formattedOptions = "";
+            for(int i = 0; i < rankedLogicActions.Count; i++)
+            {
+                LogicAction la = rankedLogicActions[i];
+                formattedOptions += la.ToString() + "\n";
+            }
+            Debug_CPULogicPrintout.instance.updatePrintout(selfAgent.id - 1, formattedOptions);
+        }
+        
         // TODO: Eventually we have a more sophisticated way, but for now, just choose the best action every time
         LogicAction chosenAction = rankedLogicActions[0];
 
@@ -214,6 +231,11 @@ public class CPUAgentLogic
         {
             return -1 * score.CompareTo((obj as LogicAction).score);
         }
+
+        public override string ToString()
+        {
+            return actionType.ToString() + ": " + score;
+        }
     }
 
     class LogicAction_Declassify : LogicAction
@@ -238,11 +260,13 @@ public class CPUAgentLogic
 
     class LogicAction_AskAround : LogicAction
     {
-        public (CPD_Type cpdType, string category) property;
+        public List<(CPD_Type cpdType, string category)> property;
+        public Agent askAgent;
 
-        public LogicAction_AskAround(float sc, (CPD_Type cpdType, string category) props) : base(LogicActionType.Ask_Around, sc)
+        public LogicAction_AskAround(float sc, List<(CPD_Type cpdType, string category)> props, Agent askToAgent) : base(LogicActionType.Ask_Around, sc)
         {
             property = props;
+            askAgent = askToAgent;
         }
     }
 
@@ -253,5 +277,54 @@ public class CPUAgentLogic
         Guess_Property,
         Guess_Target,
         Ask_Around
+    }
+
+
+
+
+    // ------------------------------
+    // CPU Personality Traits...
+    // ------------------------------
+
+    class CPUPersonalityStats
+    {
+        public Dictionary<CPUPersonalityTrait, float> personalityTraits;
+
+        public CPUPersonalityStats(bool randomize)
+        {
+            personalityTraits = new Dictionary<CPUPersonalityTrait, float>();
+
+            // If no base stats supplied, randomize them all
+            if(randomize)
+            {
+                personalityTraits.Add(CPUPersonalityTrait.Intelligence, Range(0, 1));
+                personalityTraits.Add(CPUPersonalityTrait.Deceptive, Range(0, 1));
+                personalityTraits.Add(CPUPersonalityTrait.Reckless, Range(0, 1));
+                personalityTraits.Add(CPUPersonalityTrait.Aggressive, Range(0, 1));
+                personalityTraits.Add(CPUPersonalityTrait.Secretive, Range(0, 1));
+                personalityTraits.Add(CPUPersonalityTrait.Grudgy, Range(0, 1));
+            }
+            else
+            {
+                personalityTraits.Add(CPUPersonalityTrait.Intelligence, 0);
+                personalityTraits.Add(CPUPersonalityTrait.Deceptive, 0);
+                personalityTraits.Add(CPUPersonalityTrait.Reckless, 0);
+                personalityTraits.Add(CPUPersonalityTrait.Aggressive, 0);
+                personalityTraits.Add(CPUPersonalityTrait.Secretive, 0);
+                personalityTraits.Add(CPUPersonalityTrait.Grudgy, 0);
+            }
+        }
+    }
+
+
+    // All traits from 0 - 1
+    enum CPUPersonalityTrait
+    {
+        Intelligence,    // Chooses actions randomly -- everything is calculated
+        Deceptive,       // Straightforward -- Will try to deceive other players
+        Reckless,        // Cautious -- Willing to take risks
+        Aggressive,      // Minds own business -- Likes bringing down others
+        Secretive,       // Doesn't care about letting info slip -- prioritizes secrecy
+        Grudgy           // Will attack the leader -- will attack players who previously wronged them
     }
 }

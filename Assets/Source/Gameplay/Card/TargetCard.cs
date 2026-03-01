@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using System;
 using TMPro;
 using UnityEngine.UI;
 
@@ -11,12 +11,14 @@ public class TargetCard : ConditionalUI
     [SerializeField] private TextMeshProUGUI cpdTitle;
     [SerializeField] private TextMeshProUGUI category;
     [SerializeField] private Sprite pic;
+    [SerializeField] private SpriteRenderer seal;
 
     private CPD_Type cpdType;
 
     [SerializeField] private Image selectedSpr;
 
     private bool revealed;
+    TargetCPDGuessReward reward;
 
     // Start is called before the first frame update
     void Start()
@@ -27,33 +29,50 @@ public class TargetCard : ConditionalUI
     private void OnEnable()
     {
         Total_UI.uiStateChanged += onUIstateUpdate;
-        TargetCharGuess.playerGuessesTargetProperty += RevealToAll;
+        TargetCharGuess.playerGuessesTargetProperty += OnPlayerGuess;
     }
 
     private void OnDisable()
     {
         Total_UI.uiStateChanged -= onUIstateUpdate;
-        TargetCharGuess.playerGuessesTargetProperty -= RevealToAll;
+        TargetCharGuess.playerGuessesTargetProperty -= OnPlayerGuess;
     }
 
-    public void initialize(int num, string title, string cat)
+    public void initialize(int num, string title, string cat, TargetCPDGuessReward award)
     {
         cpdNum.text = (num + 1).ToString();
         cpdTitle.text = title;
         category.text = cat;
+        reward = award;
+
+        switch(reward)
+        {
+            case TargetCPDGuessReward.ActionCard:
+                seal.sprite = TargetProperties.instance.actionCardSeal;
+                break;
+            case TargetCPDGuessReward.GoldCard:
+                seal.sprite = TargetProperties.instance.goldCardSeal;
+                break;
+        }
 
         cpdType = Roster.cpdConstrainables[num].cpdType;
     }
 
-
-    // When it's correctly guessed, reveal it to all players (and prevent future action)
-    public void RevealToAll(CPD_Type cpdType, string _, bool wasCorrect)
+    private void OnPlayerGuess(CPD_Type cpdType, string _, bool wasCorrect)
     {
         if (wasCorrect && cpdType == this.cpdType)
         {
-            transform.parent.localRotation = Quaternion.Euler(0, 0, 0);
-            revealed = true;
+            RevealToAll();
+            TurnDriver.instance.giveReward(0, reward);
         }
+    }
+
+
+    // When it's correctly guessed, reveal it to all players (and prevent future action)
+    private void RevealToAll()
+    {
+        transform.parent.localRotation = Quaternion.Euler(0, 0, 0);
+        revealed = true;
     }
 
 

@@ -17,7 +17,8 @@ public class TurnDriver : MonoBehaviour
     private int currTurn;  // from 0-num agents
 
     public List<ClueCard> clueCardDeck;
-    public List<PersonCard> actionCardDeck;
+    public List<ActionCard> actionCardDeck;
+    public List<GoldCard> goldCardDeck;
 
 
     // For action / reaction chains. What card is trying to be played?
@@ -67,28 +68,29 @@ public class TurnDriver : MonoBehaviour
     private void generateDeck(Roster rost)
     {
         clueCardDeck = new List<ClueCard>();
-        actionCardDeck = new List<PersonCard>();
+        actionCardDeck = new List<ActionCard>();
+        goldCardDeck = new List<GoldCard>();
 
         // Add to deck: All action card types
 
-        actionCardDeck.Add(new GoldCard(GoldCardType.THIEF));
-        actionCardDeck.Add(new GoldCard(GoldCardType.THIEF));
+        goldCardDeck.Add(new GoldCard(GoldCardType.THIEF));
+        goldCardDeck.Add(new GoldCard(GoldCardType.THIEF));
 
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.INSIDER));
 
-        actionCardDeck.Add(new GoldCard(GoldCardType.HACKER));
-        actionCardDeck.Add(new GoldCard(GoldCardType.HACKER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.HACKER));
+        goldCardDeck.Add(new GoldCard(GoldCardType.HACKER));
 
-        actionCardDeck.Add(new GoldCard(GoldCardType.ASSASSAIN));
-        actionCardDeck.Add(new GoldCard(GoldCardType.ASSASSAIN));
+        goldCardDeck.Add(new GoldCard(GoldCardType.ASSASSAIN));
+        goldCardDeck.Add(new GoldCard(GoldCardType.ASSASSAIN));
 
-        actionCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
-        actionCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
+        goldCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
+        goldCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
 
         actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
 
@@ -189,7 +191,7 @@ public class TurnDriver : MonoBehaviour
     {
         if(actionCardDeck.Count > 0)
         {
-            PersonCard next = actionCardDeck[0];
+            ActionCard next = actionCardDeck[0];
             actionCardDeck.RemoveAt(0);
 
             agentsInOrder[currTurn].acquireCard(next);
@@ -197,7 +199,42 @@ public class TurnDriver : MonoBehaviour
         {
             Debug.LogWarning("No action cards left to deal!");
         }
-        
+    }
+
+    public void dealGoldCard()
+    {
+        if (goldCardDeck.Count > 0)
+        {
+            GoldCard next = goldCardDeck[0];
+            goldCardDeck.RemoveAt(0);
+
+            agentsInOrder[currTurn].acquireCard(next);
+        }
+        else
+        {
+            Debug.LogWarning("No action cards left to deal!");
+        }
+    }
+
+    public Card getNextCardInLine(CardType cardType, bool andRemove)
+    {
+        Card toGive;
+        switch(cardType)
+        {
+            case CardType.CLUE:
+                toGive = clueCardDeck[0];
+                if(andRemove) clueCardDeck.RemoveAt(0);
+                break;
+            case CardType.ACTION:
+                toGive = actionCardDeck[0];
+                if (andRemove) actionCardDeck.RemoveAt(0);
+                break;
+            default:
+                toGive = goldCardDeck[0];
+                if (andRemove) goldCardDeck.RemoveAt(0);
+                break;
+        }
+        return toGive;
     }
 
     public void executeActionCard(Agent playingAgent, Agent targetAgent, ReactionVerdict verdict) { 
@@ -218,5 +255,11 @@ public class TurnDriver : MonoBehaviour
                 else                       ActionHandler_CPU.handleFinalPlayedAction(queuedCard, playingAgent);
                 break;
         }
+    }
+
+    public void giveReward(int toId, TargetCPDGuessReward rewardType)
+    {
+        if (rewardType == TargetCPDGuessReward.ActionCard) agentsInOrder[toId].acquireCard(getNextCardInLine(CardType.ACTION, true));
+        else if (rewardType == TargetCPDGuessReward.GoldCard) agentsInOrder[toId].acquireCard(getNextCardInLine(CardType.GOLD, true));
     }
 }

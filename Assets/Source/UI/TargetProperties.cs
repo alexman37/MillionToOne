@@ -6,6 +6,11 @@ public class TargetProperties : MonoBehaviour
 {
     [SerializeField] private GameObject targetCardTemplate;
 
+    [SerializeField] public Sprite actionCardSeal;
+    [SerializeField] public Sprite goldCardSeal;
+
+    public static TargetProperties instance;
+
     public List<TargetCard> targetCards;
 
     public Vector3 defaultTargetPosition;
@@ -15,7 +20,8 @@ public class TargetProperties : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        if (instance == null) instance = this;
+        else Destroy(this);
     }
 
     private void OnEnable()
@@ -41,10 +47,23 @@ public class TargetProperties : MonoBehaviour
 
             next.transform.localPosition = defaultTargetPosition + new Vector3(2 * i, 0, 0);
             TargetCard tc = next.GetComponentInChildren<TargetCard>();
-            tc.initialize(i, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType));
+
+            int cpdDifficulty = cpd.categories.Count;
+            TargetCPDGuessReward reward;
+            if (cpdDifficulty > 5) reward = TargetCPDGuessReward.GoldCard;
+            else if (cpdDifficulty > 2) reward = TargetCPDGuessReward.ActionCard;
+            else reward = TargetCPDGuessReward.None;
+
+            tc.initialize(i, cpd.cpdType.ToString(), targetCharacter.getCategoryofCharacteristic(cpd.cpdType), reward);
 
             targetCards.Add(tc);
         }
-        
     }
+}
+
+public enum TargetCPDGuessReward
+{
+    None,
+    ActionCard,
+    GoldCard
 }
