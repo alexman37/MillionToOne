@@ -14,7 +14,7 @@ public class CPUInfoTracker
     private static float totalRosterSizeAtStart = -1;
 
     // What categories are currently in your hand (clue cards) - use to answer Ask around's
-    private HashSet<(CPD_Type, string)> catsInHand = new HashSet<(CPD_Type, string)>();
+    public HashSet<(CPD_Type, string)> catsInHand = new HashSet<(CPD_Type, string)>();
 
     // How many categories are still possible for each CPD
     public Dictionary<CPD_Type, HashSet<string>> catsPossible = new Dictionary<CPD_Type, HashSet<string>>();
@@ -102,10 +102,26 @@ public class CPUInfoTracker
         }
     }
 
+    /// <summary>
+    /// A CPD was revealed to all players. Do not ask about it anymore, no reason to.
+    /// </summary>
     public void CPDRevealed(CPD_Type cpdType, string category) {
         solvedCPDs.Add(cpdType);
         askAroundMatrix.cpdRevealed(cpdType);
     }
+
+    /// <summary>
+    /// Someone else asked around. You should track this information.
+    /// </summary>
+    public void ProcessOutsideAA(Agent asker, Agent asked, List<(CPD_Type, string)> topics, int numShown)
+    {
+        askAroundMatrix.processOutsideAA(asker, asked, topics, numShown);
+    }
+
+
+
+
+
 
 
     private void updateConfidence(int id, int newRosterSize)

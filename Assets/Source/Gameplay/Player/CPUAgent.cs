@@ -196,7 +196,46 @@ public class CPUAgent : Agent
 
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
     {
+        asking.askedAbout(this, inquiry);
 
+        // Must make sure this is only done once per ask-around
+        AAMatrix.MarkInAskAroundCount(this.id, inquiry);
+    }
+
+    public override void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry)
+    {
+        HashSet<(CPD_Type, string)> overlap = new HashSet<(CPD_Type, string)>(infoTracker.catsInHand);
+        overlap.IntersectWith(inquiry);
+
+        if(overlap.Count > 0)
+        {
+            (bool declass, CPD_Type cpdType, string cat) calc = agentLogic.onAskedAbout(askedBy, overlap);
+            if (calc.declass)
+            {
+                Debug.LogWarning("CPU decided to declassify a card instead of showing you!");
+                ClueCard cc = inventory.Find(cc => cc.cpdType == calc.cpdType && cc.category == calc.cat);
+                Debug.Log(cc);
+                playCard(cc);
+            }
+            else
+            {
+                Debug.LogWarning("CPU shows you cards");
+                askedBy.learnedFromAA(this, inquiry);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Nothing to show...moving on.");
+        }
+    }
+
+    public override void learnedFromAA(Agent learnedFrom, List<(CPD_Type, string)> topics)
+    {
+        foreach((CPD_Type, string) topic in topics)
+        {
+            infoTracker.MarkDefinitive(topic.Item1, topic.Item2, false);
+            // TODO will it eventually support "yes" cards?
+        }
     }
 
     public override void guessTargetCharacteristic(CPD_Type cpdType, string cat, bool wasCorrect)

@@ -169,6 +169,52 @@ public class CPUAgentLogic
     }
 
 
+    /// <summary>
+    /// The CPU was asked questions by another agent.
+    /// They can show all guessed cards in their hand to the player who asked,
+    /// Or declassify a single guessed clue card to everybody.
+    /// Which action they take (and which cards are involved) is determined here.
+    /// </summary>
+    /// <returns>The topic of the card to declassify, or </returns>
+    public (bool declassified, CPD_Type cpdType, string cat) onAskedAbout(Agent whoAsked, IEnumerable<(CPD_Type, string)> overlap)
+    {
+        // First assess the value of each card - how valuable are they to the player, and to all players?
+        int count = 0;
+
+        (CPD_Type, string) bestDeclass = ((CPD_Type)0, "");
+        float bestDeclassScore = 9999999; // The LOWEST score for any potential declassification
+
+        foreach((CPD_Type cpdType, string cat) cc in overlap)
+        {
+            float declassScore = infoTracker.askAroundMatrix.getDeclassifyScore(cc);
+            if(declassScore < bestDeclassScore)
+            {
+                bestDeclass = cc;
+                bestDeclassScore = declassScore;
+            }
+            count++;
+        }
+
+        // No reason to declassify unless the CPU would have to show 2 or more cards.
+        // TODO: or the CPU is spiteful.
+        if (count < 2)
+        {
+            return (true, bestDeclass.Item1, bestDeclass.Item2);
+        }
+        else
+        {
+            float showScore = infoTracker.askAroundMatrix.getTotalScoreOfShow(whoAsked, overlap);
+            if(showScore < bestDeclassScore)
+            {
+                return (false, (CPD_Type)0, "");
+            } else
+            {
+                return (true, bestDeclass.Item1, bestDeclass.Item2);
+            }
+        }
+    }
+
+
 
     // ------------------------------
     // Calculations...

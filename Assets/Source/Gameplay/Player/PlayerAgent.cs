@@ -13,6 +13,7 @@ public class PlayerAgent : Agent
     public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
 
+    private HashSet<(CPD_Type, string)> catsInHand = new HashSet<(CPD_Type, string)>();
 
     public PlayerAgent()
     {
@@ -88,6 +89,8 @@ public class PlayerAgent : Agent
         updateConstraintsFromCard(card);
         playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
 
+        catsInHand.Add((card.cpdType, card.category));
+
         return inventory.Count;
     }
 
@@ -103,6 +106,8 @@ public class PlayerAgent : Agent
 
             updateConstraintsFromCard(cc);
             playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
+
+            catsInHand.Add((cc.cpdType, cc.category));
 
             playerGotCard.Invoke(card, inventory.Count);
         } else
@@ -127,6 +132,7 @@ public class PlayerAgent : Agent
             ClueCard cc = card as ClueCard;
             int cardex = inventory.IndexOf(cc);
             inventory.RemoveAt(cardex);
+            catsInHand.Remove((cc.cpdType, cc.category));
             playerLostCard.Invoke(cc, cardex);
         } else
         {
@@ -180,16 +186,27 @@ public class PlayerAgent : Agent
     // Ask an agent for information
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
     {
-        // Assume the agent you are asking is always a CPU.
-        CPUAgent cAgent = asking as CPUAgent;
-        foreach((CPD_Type, string) category in inquiry)
-        {
-            // TODO : Update information, end turn
-            if (cAgent.infoTracker.HasCardFor(category))
-            {
-                Debug.Log("The asked CPU has: " + category);
-            }
-        }
+        asking.askedAbout(this, inquiry);
+
+        // Must make sure this is only done once per ask-around
+        AAMatrix.MarkInAskAroundCount(this.id, inquiry);
+    }
+
+    public override void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry)
+    {
+        HashSet<(CPD_Type, string)> overlap = new HashSet<(CPD_Type, string)>(catsInHand);
+        overlap.IntersectWith(inquiry);
+
+        PopupCanvas.instance.popup_askedAbout(askedBy, overlap);
+    }
+
+    public override void learnedFromAA(Agent learnedFrom, List<(CPD_Type, string)> topics)
+    {
+        Debug.LogError("Havent learned anything yet.");
+        // TODO form / knowledge component
+
+        // TODO visual component
+        // PopupCanvas.whatever
     }
 
     // Guess target characteristic

@@ -1,14 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class PopupCanvas : MonoBehaviour
 {
     public static PopupCanvas instance;
 
+    // Guess Target Properties
     public Canvas popupCanvas;
     public GameObject targetPropertyGuess;
+
+    // You've been asked to show some cards
+    public GameObject askedAbout;
+    [SerializeField] TextMeshProUGUI askedAboutTitle;
+    [SerializeField] GameObject displayCardTemplate;
+
+    // You get the result back of what cards were shown
+    public GameObject askAroundResult;
+    [SerializeField] TextMeshProUGUI askAroundTitle;
+
     private List<TargetCharGuess> targetPropertyEntries = new List<TargetCharGuess>();
+    private List<GameObject> displayCardObjects = new List<GameObject>();
+
 
     // Start is called before the first frame update
     void Start()
@@ -54,5 +68,63 @@ public class PopupCanvas : MonoBehaviour
 
         popupCanvas.enabled = false;
         targetPropertyGuess.SetActive(false);
+    }
+
+    public void popup_askedAbout(Agent askedBy, IEnumerable<(CPD_Type cpd, string cat)> inquiry)
+    {
+        int count = 0;
+        askedAbout.SetActive(true);
+
+        int i = 0;
+        foreach((CPD_Type cpd, string cat) query in inquiry)
+        {
+            GameObject nextDisplayCard = GameObject.Instantiate(displayCardTemplate, askedAbout.transform);
+            DisplayCard dc = nextDisplayCard.GetComponent<DisplayCard>();
+            nextDisplayCard.transform.localPosition = new Vector3(-560 + 220 * i, -730, -1);
+
+            dc.initWith(((int)query.cpd).ToString(), query.cpd.ToString(), query.cat);
+            count++;
+        }
+
+        askedAboutTitle.text = "Agent " + askedBy.agentName + " guessed " + count + " of your cards!";
+    }
+
+    public void popup_askedAboutClear()
+    {
+        foreach(GameObject go in displayCardObjects)
+        {
+            Destroy(go);
+        }
+        displayCardObjects.Clear();
+        askedAbout.SetActive(false);
+    }
+
+    public void popup_askAroundResult(IEnumerable<(CPD_Type cpd, string cat)> shown)
+    {
+        int count = 0;
+        askedAbout.SetActive(true);
+
+        int i = 0;
+        foreach ((CPD_Type cpd, string cat) query in shown)
+        {
+            GameObject nextDisplayCard = GameObject.Instantiate(displayCardTemplate, askedAbout.transform);
+            DisplayCard dc = nextDisplayCard.GetComponent<DisplayCard>();
+            nextDisplayCard.transform.localPosition = new Vector3(-560 + 220 * i, -730, -1);
+
+            dc.initWith(((int)query.cpd).ToString(), query.cpd.ToString(), query.cat);
+            count++;
+        }
+
+        askedAboutTitle.text = "Here's what they had";
+    }
+
+    public void popup_askAroundResultClear()
+    {
+        foreach (GameObject go in displayCardObjects)
+        {
+            Destroy(go);
+        }
+        displayCardObjects.Clear();
+        askAroundResult.SetActive(false);
     }
 }

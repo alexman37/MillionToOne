@@ -77,6 +77,10 @@ public abstract class Agent
         return recruits.Count + 1;
     }
 
+    public abstract void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry);
+
+    public abstract void learnedFromAA(Agent learnedFrom, List<(CPD_Type, string)> topics);
+
     /// <summary>
     /// Guess one of the target's characteristics for rewards
     /// </summary>

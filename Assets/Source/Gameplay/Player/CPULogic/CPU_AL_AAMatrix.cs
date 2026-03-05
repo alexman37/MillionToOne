@@ -25,6 +25,8 @@ public class AAMatrix
     Dictionary<(CPD_Type cpdType, string cat), List<AgentScore>> agentsPerKey;
     // All keys, sorted in order from most to least enticing
     KeyScoreChart keyScoreChart;
+    // How often each key is asked about by each player.
+    static Dictionary<(CPD_Type cpdType, string cat), List<int>> askAroundCount;
 
     public AAMatrix(Agent agent, CPUInfoTracker info, CPUPersonalityStats personality)
     {
@@ -42,22 +44,36 @@ public class AAMatrix
         agentsInOrder = TurnDriver.instance.agentsInOrder;
         numPlayers = agentsInOrder.Count;
 
-        if (!catsPerCPDinit) catsPerCPD = new Dictionary<CPD_Type, List<string>>();
+        if (!catsPerCPDinit)
+        {
+            catsPerCPD = new Dictionary<CPD_Type, List<string>>();
+            // Assume the other static data structure also uninstantiated.
+            askAroundCount = new Dictionary<(CPD_Type cpdType, string cat), List<int>>();
+        }
 
         int count = 0;
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
-            if(!catsPerCPDinit) catsPerCPD.Add(cpd.cpdType, new List<string>(cpd.categories));
+            if (!catsPerCPDinit)
+            {
+                catsPerCPD.Add(cpd.cpdType, new List<string>(cpd.categories));
+            }
 
             foreach (string category in cpd.categories)
             {
                 agentsPerKey.Add((cpd.cpdType, category), new List<AgentScore>());
                 count++;
 
+                if (!catsPerCPDinit)
+                {
+                    askAroundCount.Add((cpd.cpdType, category), new List<int>());
+                }
+
                 for (int i = 0; i < numPlayers; i++)
                 {
                     // The CPU should obviously never ask itself anything.
-                    agentsPerKey[(cpd.cpdType, category)].Add(new AgentScore(i, selfAgent.id != i ? 1 : -99999));
+                    if(i != selfAgent.id)
+                        agentsPerKey[(cpd.cpdType, category)].Add(new AgentScore(i, 1));
                 }
 
                 keyScoreChart.keyscoreLookup.Add((cpd.cpdType, category), new KeyScore((cpd.cpdType, category), getBaseKeyScore(cpd, category)));
@@ -142,16 +158,107 @@ public class AAMatrix
         keyScoreChart.OnLearnedAboutCPD(cpdType, cat, onTarget);
     }
 
+    // Action when a CPD is revealed to all players
     public void cpdRevealed(CPD_Type cpdType)
     {
         keyScoreChart.OnCPDRevealed(cpdType);
     }
 
+    // Actions to take when this CPU is very close to, or ready to, guess the target
     public void closeToGuessingTarget()
     {
         keyScoreChart.UpdateUrgency();
     }
 
+    /// <summary>
+    /// The moment any ask around request is made this DS should be updated
+    /// </summary>
+    public static void MarkInAskAroundCount(int idOfWhoAsked, IEnumerable<(CPD_Type, string)> topics)
+    {
+        foreach ((CPD_Type, string) topic in topics)
+        {
+            askAroundCount[topic].Add(idOfWhoAsked);
+        }
+    }
+
+    // TODO: one day we could add some logic for when a card was declassified instead of all being revealed.
+    public void processOutsideAA(Agent asker, Agent asked, List<(CPD_Type, string)> topics, int numShown)
+    {
+        foreach((CPD_Type, string) topic in topics)
+        {
+            // If you asked about this topic, it's less likely you have it.
+            AgentScore askerAS = agentsPerKey[topic].Find(a => a.agentId == asker.id);
+            if(askerAS != null)
+            {
+                askerAS.score -= 2;
+            }
+            
+
+            // Can learn things about the agent being asked based on their response.
+            AgentScore askedAS = agentsPerKey[topic].Find(a => a.agentId == asked.id);
+            if(askedAS != null)
+            {
+                // "I had none of those cards" = this agent definitely doesn't have them
+                if (numShown == 0)
+                {
+                    agentsPerKey[topic].Remove(askedAS);
+                }
+                else
+                {
+                    askedAS.score += askerScoreBoostFromNumCorrectReported(topics.Count, numShown);
+                }
+            }
+        }
+    }
+
+    private float askerScoreBoostFromNumCorrectReported(int numAsked, int numReported)
+    {
+        // "I had every card you asked for"
+        if(numAsked == numReported)
+        {
+            return 1000;
+        }
+        // "I had some cards but not all of them"
+        else
+        {
+            // 1 out of 2:  +2
+            // 2 out of 4:  +4
+            // 2 out of 5:  +3.2
+            return 4 * numReported * (numReported / numAsked);
+        }
+    }
+
+
+    // ------------
+    // Functions for being asked about topics
+    // ------------
+
+    /// <summary>
+    /// How damaging would it be to declassify this card? (The lower, the better for this CPU)
+    /// </summary>
+    public float getDeclassifyScore((CPD_Type, string) topic)
+    {
+        // TODO: we could improve on this
+        // As a rough estimate - the more something has been asked about, the more likely it is to be known in general
+        // This flips it, so the more it's been asked about, the lower its score.
+        return -1 * askAroundCount[topic].Count;
+    }
+
+    /// <summary>
+    /// How damaging would it be to show all given cards to specified agent? (The lower, the better for this CPU)
+    /// </summary>
+    public float getTotalScoreOfShow(Agent whoAsked, IEnumerable<(CPD_Type, string)> topics)
+    {
+        // TODO: we could improve on this
+        // As a rough estimate - the more an agent asks about these topics, the more likely they already know something about it
+        // This flips it, so the more it's been asked about, the lower its score.
+        int totalAsks = 0;
+        foreach((CPD_Type, string) topic in topics)
+        {
+            totalAsks += askAroundCount[topic].FindAll(i => i == whoAsked.id).Count;
+        }
+        return -1 * totalAsks;
+    }
 
 
 
