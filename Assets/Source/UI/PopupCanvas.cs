@@ -102,20 +102,19 @@ public class PopupCanvas : MonoBehaviour
     public void popup_askAroundResult(IEnumerable<(CPD_Type cpd, string cat)> shown)
     {
         int count = 0;
-        askedAbout.SetActive(true);
+        askAroundResult.SetActive(true);
 
-        int i = 0;
         foreach ((CPD_Type cpd, string cat) query in shown)
         {
-            GameObject nextDisplayCard = GameObject.Instantiate(displayCardTemplate, askedAbout.transform);
+            GameObject nextDisplayCard = GameObject.Instantiate(displayCardTemplate, askAroundResult.transform);
             DisplayCard dc = nextDisplayCard.GetComponent<DisplayCard>();
-            nextDisplayCard.transform.localPosition = new Vector3(-560 + 220 * i, -730, -1);
+            nextDisplayCard.transform.localPosition = new Vector3(-560 + 220 * count, -730, -1);
 
             dc.initWith(((int)query.cpd).ToString(), query.cpd.ToString(), query.cat);
             count++;
         }
 
-        askedAboutTitle.text = "Here's what they had";
+        askAroundTitle.text = "Here's what they had: " + count + " cards";
     }
 
     public void popup_askAroundResultClear()
@@ -127,4 +126,24 @@ public class PopupCanvas : MonoBehaviour
         displayCardObjects.Clear();
         askAroundResult.SetActive(false);
     }
+
+    public void popup_askAroundVague(IEnumerable<(CPD_Type cpd, string cat)> inquiry, int numCorrect)
+    {
+        int count = 0;
+        askAroundResult.SetActive(true);
+
+        foreach ((CPD_Type cpd, string cat) query in inquiry)
+        {
+            GameObject nextDisplayCard = GameObject.Instantiate(displayCardTemplate, askAroundResult.transform);
+            DisplayCard dc = nextDisplayCard.GetComponent<DisplayCard>();
+            nextDisplayCard.transform.localPosition = new Vector3(-560 + 220 * count, -730, -1);
+
+            dc.initWith(((int)query.cpd).ToString(), query.cpd.ToString(), query.cat);
+            count++;
+        }
+
+        askAroundTitle.text = "Of this inquiry, the asked agent had " + numCorrect + " cards.";
+    }
+
+    // Vague uses same clear as result
 }

@@ -234,30 +234,28 @@ public class AAMatrix
     // ------------
 
     /// <summary>
-    /// How damaging would it be to declassify this card? (The lower, the better for this CPU)
+    /// How damaging would it be to declassify this card? (The higher, the better for this CPU)
     /// </summary>
     public float getDeclassifyScore((CPD_Type, string) topic)
     {
         // TODO: we could improve on this
         // As a rough estimate - the more something has been asked about, the more likely it is to be known in general
-        // This flips it, so the more it's been asked about, the lower its score.
-        return -1 * askAroundCount[topic].Count;
+        return askAroundCount[topic].Count;
     }
 
     /// <summary>
-    /// How damaging would it be to show all given cards to specified agent? (The lower, the better for this CPU)
+    /// How damaging would it be to show all given cards to specified agent? (The higher, the better for this CPU)
     /// </summary>
     public float getTotalScoreOfShow(Agent whoAsked, IEnumerable<(CPD_Type, string)> topics)
     {
         // TODO: we could improve on this
         // As a rough estimate - the more an agent asks about these topics, the more likely they already know something about it
-        // This flips it, so the more it's been asked about, the lower its score.
         int totalAsks = 0;
         foreach((CPD_Type, string) topic in topics)
         {
             totalAsks += askAroundCount[topic].FindAll(i => i == whoAsked.id).Count;
         }
-        return -1 * totalAsks;
+        return totalAsks;
     }
 
 
@@ -439,7 +437,7 @@ public class AAMatrix
                 formatted = formatted + keyscoreLookup[key].ToString() + "\n";
             }
 
-            Debug_CPULogicPrintout.instance.updateAAprintout(reference.selfAgent.id - 1, formatted);
+            //Debug_CPULogicPrintout.instance.updateAAprintout(reference.selfAgent.id - 1, formatted);
         }
     }
 }

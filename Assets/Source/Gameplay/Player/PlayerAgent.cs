@@ -9,9 +9,13 @@ public class PlayerAgent : Agent
 
     public static event Action<Card, int> playerGotCard = (_,n) => { };
     public static event Action<Card, int> playerLostCard = (_,n) => { };
-    public static event Action<Card> updateFormWithCard = (_) => { };
+    public static event Action<CPD_Type, string, bool> updateFormWithInfo = (_,__,b) => { };
     public static event Action<int> playerUpdateProgress = (_) => { };
     public static event Action playerTurnOver = () => { };
+
+    public static event Action<Agent, Agent, List<(CPD_Type, string)>> playerAskAround_Made                = (a, b, c) => { };
+    public static event Action<Agent, Agent, List<(CPD_Type, string)>, int> playerAskAround_Response_Show  = (a, b, c, d) => { };
+    public static event Action<ClueCard> playerAskAround_Response_Declass                                  = (a) => { };
 
     private HashSet<(CPD_Type, string)> catsInHand = new HashSet<(CPD_Type, string)>();
 
@@ -40,6 +44,7 @@ public class PlayerAgent : Agent
         Roster.guessedWrongCharacter += guessTarget;
         RosterForm.askAroundCompleted += completedAskAround;
         AgentDisplay.selectedAgent_AS += onAgentSelected;
+        CPUAgent.cpuAskAround_Response_Show += onOutsideAskAroundResult;
     }
 
     ~PlayerAgent()
@@ -50,6 +55,7 @@ public class PlayerAgent : Agent
         Roster.guessedWrongCharacter -= guessTarget;
         RosterForm.askAroundCompleted -= completedAskAround;
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
+        CPUAgent.cpuAskAround_Response_Show -= onOutsideAskAroundResult;
     }
 
     // Initial actions before the player's turn.
@@ -84,7 +90,7 @@ public class PlayerAgent : Agent
 
         inventory.Add(card);
         playerGotCard.Invoke(card, inventory.Count);
-        updateFormWithCard.Invoke(card);
+        updateFormWithInfo.Invoke(card.cpdType, card.category, card.onTarget);
 
         updateConstraintsFromCard(card);
         playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
@@ -110,6 +116,7 @@ public class PlayerAgent : Agent
             catsInHand.Add((cc.cpdType, cc.category));
 
             playerGotCard.Invoke(card, inventory.Count);
+            updateFormWithInfo.Invoke(cc.cpdType, cc.category, cc.onTarget);
         } else
         {
             PersonCard pc = card as PersonCard;
@@ -118,7 +125,6 @@ public class PlayerAgent : Agent
             playerGotCard.Invoke(card, recruits.Count);
         }
 
-        updateFormWithCard.Invoke(card);
         Debug.Log("The player acquires card: " + card);
 
         return card.cardType == CardType.CLUE ? inventory.Count : recruits.Count;
@@ -178,7 +184,7 @@ public class PlayerAgent : Agent
         if(!cc.redacted)
         {
             updateConstraintsFromCard(cc);
-            updateFormWithCard.Invoke(cc);
+            updateFormWithInfo.Invoke(cc.cpdType, cc.category, cc.onTarget);
             playerUpdateProgress.Invoke(TurnDriver.instance.currentRoster.getNewRosterSizeFromConstraints(rosterConstraints));
         }
     }
@@ -186,10 +192,12 @@ public class PlayerAgent : Agent
     // Ask an agent for information
     public override void askAgent(Agent asking, List<(CPD_Type, string)> inquiry)
     {
-        asking.askedAbout(this, inquiry);
-
         // Must make sure this is only done once per ask-around
         AAMatrix.MarkInAskAroundCount(this.id, inquiry);
+
+        asking.askedAbout(this, inquiry);
+
+        playerAskAround_Made.Invoke(this, asking, inquiry);
     }
 
     public override void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry)
@@ -202,11 +210,34 @@ public class PlayerAgent : Agent
 
     public override void learnedFromAA(Agent learnedFrom, List<(CPD_Type, string)> topics)
     {
-        Debug.LogError("Havent learned anything yet.");
-        // TODO form / knowledge component
+        Debug.Log("Learned from AA");
+        foreach((CPD_Type, string) topic in topics)
+        {
+            updateFormWithInfo.Invoke(topic.Item1, topic.Item2, false);
+        }
 
-        // TODO visual component
-        // PopupCanvas.whatever
+        PopupCanvas.instance.popup_askAroundResult(topics);
+    }
+
+    public override void onOutsideAskAroundResult(Agent askedBy, Agent askedTo, List<(CPD_Type, string)> inquiry, int numCorrect)
+    {
+        if(askedBy.id != id && askedTo.id != id)
+        {
+            PopupCanvas.instance.popup_askAroundVague(inquiry, numCorrect);
+        }
+    }
+
+    public void aaRespond_Show(Agent askedBy, Agent askedTo, List<(CPD_Type, string)> inquiry, List<(CPD_Type, string)> shown)
+    {
+        askedBy.learnedFromAA(askedTo, shown);
+        playerAskAround_Response_Show.Invoke(askedBy, askedTo, inquiry, shown.Count);
+    }
+
+    public void aaRespond_Declass(ClueCard cc)
+    {
+        // TODO play without reward
+        playCard(cc);
+        playerAskAround_Response_Declass.Invoke(cc);
     }
 
     // Guess target characteristic
@@ -287,7 +318,6 @@ public class PlayerAgent : Agent
     {
         if (receivedCard is ClueCard)
         {
-            // TODO CPU may have to distinguish between guaranteed facts and guesses, so "lock" these constraints in
             ClueCard cc = receivedCard as ClueCard;
             if (cc.onTarget)
             {
@@ -297,6 +327,19 @@ public class PlayerAgent : Agent
             {
                 rosterConstraints.addConstraint(cc.cpdType, cc.category, true);
             }
+        }
+    }
+
+    // CPU handles their constraints locally.
+    private void updateConstraintsFromInfo((CPD_Type cpdType, string cat) info, bool isCorrect)
+    {
+        if (isCorrect)
+        {
+            rosterConstraints.onlyConstraint(info.cpdType, info.cat);
+        }
+        else
+        {
+            rosterConstraints.addConstraint(info.cpdType, info.cat, true);
         }
     }
 

@@ -67,8 +67,21 @@ public abstract class Agent
     /// </summary>
     public abstract void playCard(Card card);
 
+    public virtual List<(CPD_Type, string)> findInventoryOverlap(List<(CPD_Type, string)> inquiry)
+    {
+        List<(CPD_Type, string)> overlap = new List<(CPD_Type, string)>();
+        foreach ((CPD_Type, string) topic in inquiry)
+        {
+            if (inventory.FindIndex(cc => cc.cpdType == topic.Item1 && cc.category == topic.Item2) != -1)
+            {
+                overlap.Add(topic);
+            }
+        }
+        return overlap;
+    }
+
     /// <summary>
-    /// Agent asks another agent for information
+    /// This agent asks another agent for information
     /// </summary>
     public abstract void askAgent(Agent asking, List<(CPD_Type, string)> inquiry);
 
@@ -77,9 +90,20 @@ public abstract class Agent
         return recruits.Count + 1;
     }
 
+    /// <summary>
+    /// This agent was asked about info by another agent
+    /// </summary>
     public abstract void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry);
 
+    /// <summary>
+    /// After making an ask around request, this agent learns info directly from another (if shown)
+    /// </summary>
     public abstract void learnedFromAA(Agent learnedFrom, List<(CPD_Type, string)> topics);
+
+    /// <summary>
+    /// When a different agent asks another agent for info, do this (if shown)
+    /// </summary>
+    public abstract void onOutsideAskAroundResult(Agent askedBy, Agent askedTo, List<(CPD_Type, string)> inquiry, int numCorrect);
 
     /// <summary>
     /// Guess one of the target's characteristics for rewards

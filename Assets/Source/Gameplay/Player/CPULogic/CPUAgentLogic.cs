@@ -182,12 +182,12 @@ public class CPUAgentLogic
         int count = 0;
 
         (CPD_Type, string) bestDeclass = ((CPD_Type)0, "");
-        float bestDeclassScore = 9999999; // The LOWEST score for any potential declassification
+        float bestDeclassScore = -9999999; // The highest score for any potential declassification
 
         foreach((CPD_Type cpdType, string cat) cc in overlap)
         {
             float declassScore = infoTracker.askAroundMatrix.getDeclassifyScore(cc);
-            if(declassScore < bestDeclassScore)
+            if(declassScore > bestDeclassScore)
             {
                 bestDeclass = cc;
                 bestDeclassScore = declassScore;
@@ -199,12 +199,12 @@ public class CPUAgentLogic
         // TODO: or the CPU is spiteful.
         if (count < 2)
         {
-            return (true, bestDeclass.Item1, bestDeclass.Item2);
+            return (false, (CPD_Type)0, "");
         }
         else
         {
             float showScore = infoTracker.askAroundMatrix.getTotalScoreOfShow(whoAsked, overlap);
-            if(showScore < bestDeclassScore)
+            if(showScore > bestDeclassScore)
             {
                 return (false, (CPD_Type)0, "");
             } else

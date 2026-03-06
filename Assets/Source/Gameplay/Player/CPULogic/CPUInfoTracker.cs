@@ -18,7 +18,6 @@ public class CPUInfoTracker
 
     // How many categories are still possible for each CPD
     public Dictionary<CPD_Type, HashSet<string>> catsPossible = new Dictionary<CPD_Type, HashSet<string>>();
-    private Dictionary<CPD_Type, int> totalCatsPossible = new Dictionary<CPD_Type, int>();
 
     // We know for certain the CPDs in this list, and can ignore guessing/using them in some ways
     public HashSet<CPD_Type> solvedCPDs = new HashSet<CPD_Type>();
@@ -34,7 +33,6 @@ public class CPUInfoTracker
         foreach (CPD cpd in Roster.cpdConstrainables)
         {
             catsPossible.Add(cpd.cpdType, new HashSet<string>(cpd.categories));
-            totalCatsPossible.Add(cpd.cpdType, cpd.categories.Count);
         }
 
         CPUAgent.cpuUpdateProgress += updateConfidence;
@@ -96,9 +94,12 @@ public class CPUInfoTracker
         if(onTarget)
         {
             catsPossible[cpdType] = new HashSet<string>() { category };
+            solvedCPDs.Add(cpdType);
         } else
         {
             catsPossible[cpdType].Remove(category);
+            if (catsPossible[cpdType].Count == 1)
+                solvedCPDs.Add(cpdType);
         }
     }
 

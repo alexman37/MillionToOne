@@ -63,7 +63,7 @@ public class FormButton : ConditionalUI
     private void OnEnable()
     {
         Total_UI.uiStateChanged += onUIstateUpdate;
-        PlayerAgent.updateFormWithCard += updateConstraintFromCard;
+        PlayerAgent.updateFormWithInfo += updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty += updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent_PT += askAroundForAgent;
         AgentDisplay.deselectedAgent_PT += stopAskingAround;
@@ -73,7 +73,7 @@ public class FormButton : ConditionalUI
     private void OnDisable()
     {
         Total_UI.uiStateChanged -= onUIstateUpdate;
-        PlayerAgent.updateFormWithCard -= updateConstraintFromCard;
+        PlayerAgent.updateFormWithInfo -= updateConstraintFromCard;
         TargetCharGuess.playerGuessesTargetProperty -= updateConstraintFromTargetGuess;
         AgentDisplay.selectedAgent_PT -= askAroundForAgent;
         AgentDisplay.deselectedAgent_PT -= stopAskingAround;
@@ -192,19 +192,15 @@ public class FormButton : ConditionalUI
     /// <summary>
     /// Update form constraints from receiving a card
     /// </summary>
-    private void updateConstraintFromCard(Card card)
+    private void updateConstraintFromCard(CPD_Type cpdType, string cat, bool onTarget)
     {
-        if (card is ClueCard)
+        if (this.cpdType == cpdType && this.category == cat)
         {
-            ClueCard cc = card as ClueCard;
-            if (this.cpdType == cc.cpdType && this.category == cc.category)
-            {
-                this.state = cc.onTarget ? FormButtonState.Confirmed : FormButtonState.Eliminated;
+            this.state = onTarget ? FormButtonState.Confirmed : FormButtonState.Eliminated;
 
-                if (this.state == FormButtonState.Confirmed) confirmThroughCard();
-                else eliminateThroughCard();
-                locked = true;
-            }
+            if (this.state == FormButtonState.Confirmed) confirmThroughCard();
+            else eliminateThroughCard();
+            locked = true;
         }
     }
 
