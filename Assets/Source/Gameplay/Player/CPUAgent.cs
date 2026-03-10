@@ -57,7 +57,9 @@ public class CPUAgent : Agent
 
     public override void markAsReady()
     {
-        if(dead)
+        Total_UI.instance.changeUIState(Current_UI_State.CPUTurn);
+
+        if (dead)
         {
             Debug.LogWarning("Skipped CPU " + agentName + "'s turn, they are dead");
             endOfTurn();
@@ -78,6 +80,7 @@ public class CPUAgent : Agent
         Debug.Log("It's CPU player " + agentName + "'s turn.");
 
         // TODO Do the thing with animations...
+
         agentLogic.processTurn();
     }
 
@@ -158,37 +161,7 @@ public class CPUAgent : Agent
 
             pc.play();
 
-            if (pc is ActionCard)
-            {
-                ActionCard ac = pc as ActionCard;
-                switch (ac.actionCardType)
-                {
-                    case ActionCardType.CENSOR:
-                        // TODO choose card (for now just do random)
-                        int randIndex = UnityEngine.Random.Range(0, inventory.Count);
-                        inventory[randIndex].redact();
-                        playCard(inventory[randIndex]);
-                        break;
-                    case ActionCardType.SIDEKICK:
-                        // TODO you can now ask 2 people for information
-                        break;
-                    case ActionCardType.ANALYST:
-                        // TODO force one other player to show a card of your choice
-                        break;
-                    case ActionCardType.LAWYER:
-                        // TODO force chosen player to declassify a clue card of your choice for no reward
-                        break;
-                    case ActionCardType.BODYGUARD:
-                        // TODO block a negative action on yourself
-                        break;
-                    case ActionCardType.ENFORCER:
-                        // TODO can guess 2 more suspects this turn
-                        break;
-                    case ActionCardType.INTERN:
-                        // TODO turn this action card into any other
-                        break;
-                }
-            }
+            ActionHandler_CPU.handlePlayedAction(this, pc);
         }
     }
 
@@ -255,6 +228,8 @@ public class CPUAgent : Agent
         else
         {
             Debug.LogWarning("Nothing to show...moving on.");
+            askedBy.learnedFromAA(this, overlap);
+            cpuAskAround_Response_Show.Invoke(askedBy, this, inquiry, 0);
         }
     }
 
@@ -265,6 +240,7 @@ public class CPUAgent : Agent
             infoTracker.MarkDefinitive(topic.Item1, topic.Item2, false);
             // TODO will it eventually support "yes" cards?
         }
+        endOfTurn();
     }
 
     public override void onOutsideAskAroundResult(Agent askedBy, Agent askedTo, List<(CPD_Type, string)> inquiry, int numCorrect)
@@ -284,6 +260,7 @@ public class CPUAgent : Agent
         {
             Debug.Log("And they were correct!");
             infoTracker.CPDRevealed(cpdType, cat);
+            TurnDriver.instance.giveReward(0, Roster.cpdByType[cpdType].getGuessReward());
         }
         endOfTurn();
     }
@@ -296,7 +273,27 @@ public class CPUAgent : Agent
 
     public override void guessTarget(int characterId)
     {
-        
+        bool correct = TurnDriver.instance.currentRoster.targetId == characterId;
+        if (targetGuessCount > 0)
+        {
+            targetGuessCount--;
+            // TODO obv. gotta do more than just click/respond
+            if (correct)
+            {
+                Debug.Log("CPU WINS!");
+                // TODO
+            }
+            else
+            {
+                Debug.Log("Wrong guy!");
+                if (targetGuessCount == 0)
+                    endOfTurn();
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Out of target guesses. The turn should have ended already.");
+        }
     }
 
     public override void useAbility()
@@ -306,6 +303,7 @@ public class CPUAgent : Agent
 
     public override void endOfTurn()
     {
+        Debug.Log("The CPU " + agentName + "'s turn has ended.");
         isYourTurn = false;
         cpuTurnOver.Invoke();
     }

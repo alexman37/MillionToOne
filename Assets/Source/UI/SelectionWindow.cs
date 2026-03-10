@@ -208,11 +208,13 @@ public class SelectionWindow : ConditionalUI
 
     public void madeChoiceReaction(SelectionCard chosen)
     {
+        Total_UI.instance.changeUIState(Current_UI_State.CPUTurn);
         StartCoroutine(madeChoiceReactionCo(chosen));
     }
 
     public void madeNoReaction()
     {
+        Total_UI.instance.changeUIState(Current_UI_State.CPUTurn);
         StartCoroutine(madeChoiceReactionCo(null));
     }
 
@@ -221,10 +223,12 @@ public class SelectionWindow : ConditionalUI
         Agent playingAgent = TurnDriver.instance.queuedCard.owner;
         int waitSec = 1;
 
+        ReactionVerdict verdict = ReactionVerdict.ALLOW;
+
         // TODO dispatch the action to TurnDriver
-        if (chosen == null)                               playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.ALLOW);
-        else if (chosen.data.cardType == CardType.ACTION) playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.BLOCK);
-        else if (chosen.data.cardType == CardType.GOLD)   playerReacts.Invoke(playingAgent, playerAgent, ReactionVerdict.REVERSE);
+        if (chosen == null)                               verdict = ReactionVerdict.ALLOW;
+        else if (chosen.data.cardType == CardType.ACTION) verdict = ReactionVerdict.BLOCK;
+        else if (chosen.data.cardType == CardType.GOLD)   verdict = ReactionVerdict.REVERSE;
 
         yield return new WaitForSeconds(waitSec);
 
@@ -236,7 +240,8 @@ public class SelectionWindow : ConditionalUI
         cardsInSelectionWindow.Clear();
 
         container.SetActive(false);
-        Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
+
+        playerReacts.Invoke(playingAgent, playerAgent, verdict);
     }
 
     private bool isReactionCard(Card c)

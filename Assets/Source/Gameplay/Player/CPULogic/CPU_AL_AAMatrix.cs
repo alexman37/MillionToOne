@@ -122,12 +122,16 @@ public class AAMatrix
             agentScores.Add(n, 0);
         }
 
+        float allKeyScores = 0;
+
         // For each important key, find how good each player is to ask
         List<KeyScore> topHits = keyScoreChart.GetTopN(howManyAsks);
         for (int k = 0; k < howManyAsks; k++)
         {
             (CPD_Type, string) key = topHits[k].key;
             bestKeys.Add(key);
+
+            allKeyScores += keyScoreChart.GetScore(key);
 
             for (int a = 0; a < numPlayers; a++)
             {
@@ -148,7 +152,7 @@ public class AAMatrix
             }
         }
 
-        float overallScore = maxValue; // TODO
+        float overallScore = maxValue + allKeyScores;
         return new Inquiry(overallScore, agentsInOrder[bestAgent], bestKeys);
     }
 
@@ -202,25 +206,34 @@ public class AAMatrix
                 if (numShown == 0)
                 {
                     agentsPerKey[topic].Remove(askedAS);
+                    // Want to know a little more now that another person def. didn't have it
+                    keyScoreChart.UpdateChartKeyBy(topic, 3);
                 }
                 else
                 {
-                    askedAS.score += askerScoreBoostFromNumCorrectReported(topics.Count, numShown);
+                    askedAS.score += askerScoreBoostFromNumCorrectReported(topic.Item1, topic.Item2, topics.Count, numShown);
                 }
             }
         }
     }
 
-    private float askerScoreBoostFromNumCorrectReported(int numAsked, int numReported)
+    // And also update the keyscore.
+    private float askerScoreBoostFromNumCorrectReported(CPD_Type cpdType, string cat, int numAsked, int numReported)
     {
         // "I had every card you asked for"
         if(numAsked == numReported)
         {
+            // We know these all aren't on the target now.
+            keyScoreChart.UpdateChart((cpdType, cat), -999);
+            learnedAboutCPD(cpdType, cat, false);
+
             return 1000;
         }
         // "I had some cards but not all of them"
         else
         {
+            keyScoreChart.UpdateChartKeyBy((cpdType, cat), 2 * numReported * (numReported / numAsked));
+
             // 1 out of 2:  +2
             // 2 out of 4:  +4
             // 2 out of 5:  +3.2
@@ -332,6 +345,11 @@ public class AAMatrix
             keyscoreLookup = new Dictionary<(CPD_Type, string), KeyScore>();
         }
 
+        public float GetScore((CPD_Type cpdType, string cat) pair)
+        {
+            return keyscoreLookup[pair].score;
+        }
+
         public void UpdateChart((CPD_Type, string) key, float newVal)
         {
             if(keyscoreLookup.ContainsKey(key))
@@ -424,7 +442,7 @@ public class AAMatrix
                 }
             }
 
-            DebugKeyscores();
+            //DebugKeyscores();
             return lastGoodIndex > 0 ? highestScorers.GetRange(0, lastGoodIndex) : new List<KeyScore>();
         }
 
@@ -437,7 +455,7 @@ public class AAMatrix
                 formatted = formatted + keyscoreLookup[key].ToString() + "\n";
             }
 
-            //Debug_CPULogicPrintout.instance.updateAAprintout(reference.selfAgent.id - 1, formatted);
+            Debug_CPULogicPrintout.instance.updateAAprintout(reference.selfAgent.id - 1, formatted);
         }
     }
 }

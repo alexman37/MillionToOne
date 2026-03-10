@@ -17,6 +17,10 @@ public class PlayerAgent : Agent
     public static event Action<Agent, Agent, List<(CPD_Type, string)>, int> playerAskAround_Response_Show  = (a, b, c, d) => { };
     public static event Action<ClueCard> playerAskAround_Response_Declass                                  = (a) => { };
 
+    // When waiting for a response in the popup manager, the info of asking agent's request should be stored here
+    Agent currentAA_whoAsked;
+    List<(CPD_Type, string)> currentAA_inquiry;
+
     private HashSet<(CPD_Type, string)> catsInHand = new HashSet<(CPD_Type, string)>();
 
     public PlayerAgent()
@@ -42,7 +46,8 @@ public class PlayerAgent : Agent
         ClueCard.clueCardDeclassified += onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty += guessTargetCharacteristic;
         Roster.guessedWrongCharacter += guessTarget;
-        RosterForm.askAroundCompleted += completedAskAround;
+        RosterForm.askAroundCompleted += sentAskAround;
+        PopupCanvas.popupAskAroundResponseReceived += completedAskAround;
         AgentDisplay.selectedAgent_AS += onAgentSelected;
         CPUAgent.cpuAskAround_Response_Show += onOutsideAskAroundResult;
     }
@@ -53,7 +58,8 @@ public class PlayerAgent : Agent
         ClueCard.clueCardDeclassified -= onClueCardDeclassified;
         TargetCharGuess.playerGuessesTargetProperty -= guessTargetCharacteristic;
         Roster.guessedWrongCharacter -= guessTarget;
-        RosterForm.askAroundCompleted -= completedAskAround;
+        RosterForm.askAroundCompleted -= sentAskAround;
+        PopupCanvas.popupAskAroundResponseReceived -= completedAskAround;
         AgentDisplay.selectedAgent_AS -= onAgentSelected;
         CPUAgent.cpuAskAround_Response_Show -= onOutsideAskAroundResult;
     }
@@ -152,7 +158,7 @@ public class PlayerAgent : Agent
     // Use a card
     public override void playCard(Card card)
     {
-        if(card.cardType == CardType.CLUE)
+        if (card.cardType == CardType.CLUE)
         {
             ClueCard clueCard = card as ClueCard;
             // Gameplay result depends on what the card is - clue or action
@@ -202,8 +208,9 @@ public class PlayerAgent : Agent
 
     public override void askedAbout(Agent askedBy, List<(CPD_Type, string)> inquiry)
     {
-        HashSet<(CPD_Type, string)> overlap = new HashSet<(CPD_Type, string)>(catsInHand);
-        overlap.IntersectWith(inquiry);
+        List<(CPD_Type, string)> overlap = findInventoryOverlap(inquiry);
+        currentAA_inquiry = inquiry;
+        currentAA_whoAsked = askedBy;
 
         PopupCanvas.instance.popup_askedAbout(askedBy, overlap);
     }
@@ -227,15 +234,18 @@ public class PlayerAgent : Agent
         }
     }
 
-    public void aaRespond_Show(Agent askedBy, Agent askedTo, List<(CPD_Type, string)> inquiry, List<(CPD_Type, string)> shown)
+    /// PLAYER AGENT - SPECIFIC responses to ask around
+    /// Since you have to wait for the player to do stuff in the popup, you finish the show/declass actions here.
+    public void aaRespond_Show()
     {
-        askedBy.learnedFromAA(askedTo, shown);
-        playerAskAround_Response_Show.Invoke(askedBy, askedTo, inquiry, shown.Count);
+        currentAA_whoAsked.learnedFromAA(this, currentAA_inquiry);
+        playerAskAround_Response_Show.Invoke(currentAA_whoAsked, this, currentAA_inquiry, currentAA_inquiry.Count);
     }
 
-    public void aaRespond_Declass(ClueCard cc)
+    public void aaRespond_Declass(CPD_Type cpdType, string cat)
     {
         // TODO play without reward
+        ClueCard cc = inventory.Find(card => card.cpdType == cpdType && card.category == cat);
         playCard(cc);
         playerAskAround_Response_Declass.Invoke(cc);
     }
@@ -251,6 +261,7 @@ public class PlayerAgent : Agent
         {
             // Success! Everyone knows it now, but you get cool rewards
             Debug.Log("You were correct");
+            TurnDriver.instance.giveReward(0, Roster.cpdByType[cpdType].getGuessReward());
         }
 
         else
@@ -301,6 +312,8 @@ public class PlayerAgent : Agent
     // When turn is over do these actions
     public override void endOfTurn()
     {
+        Debug.Log("The player's turn has ended.");
+        Total_UI.instance.changeUIState(Current_UI_State.GenTransition);
         isYourTurn = false;
         playerTurnOver.Invoke();
     }
@@ -370,8 +383,14 @@ public class PlayerAgent : Agent
     // Misc
 
 
-    void completedAskAround()
+    void sentAskAround()
     {
         askAroundCount -= 1;
+    }
+
+    void completedAskAround()
+    {
+        if (askAroundCount <= 0)
+            endOfTurn();
     }
 }

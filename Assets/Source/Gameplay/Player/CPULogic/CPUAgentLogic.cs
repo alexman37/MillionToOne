@@ -20,6 +20,7 @@ public class CPUAgentLogic
 {
     CPUAgent selfAgent;
     CPUInfoTracker infoTracker;
+    public CPU_AL_ActionLogic actionLogic { get; }
 
     // CPU's current ordering of how good (or bad) it thinks each possible action would be.
     private List<LogicAction> rankedLogicActions;
@@ -28,6 +29,7 @@ public class CPUAgentLogic
     {
         selfAgent = agent;
         infoTracker = agent.infoTracker;
+        actionLogic = new CPU_AL_ActionLogic(selfAgent);
 
         rankedLogicActions = new List<LogicAction>();
     }
@@ -59,26 +61,25 @@ public class CPUAgentLogic
             new LogicAction(LogicActionType.Nothing, 0)
         );
 
-        foreach(Card c in selfAgent.inventory)
+        foreach (ClueCard cc in selfAgent.inventory)
         {
             // 2. Declassifying a clue card to get an action card.
-            if(c is ClueCard)
-            {
-                ClueCard cc = c as ClueCard;
-                rankedLogicActions.Add(
-                    new LogicAction_Declassify(2, cc)
-                );
-            }
+            rankedLogicActions.Add(
+                // TODO this probably differs from declassifying in responding to ask around
+                new LogicAction_Declassify(5 + infoTracker.askAroundMatrix.getDeclassifyScore((cc.cpdType, cc.category)), cc)
+            );
+        }
 
+        foreach (PersonCard pc in selfAgent.recruits)
+        {
             // 3. Using an action card.
-            else if (c is ActionCard)
-            {
-                // TODO
-            }
+            rankedLogicActions.Add(
+                new LogicAction_PlayPersonCard(actionLogic.getActionCardScore(pc), pc)
+            );
         }
 
         // 4. Guessing one of the target's characteristics for a reward.
-        foreach(CPD cpd in Roster.cpdConstrainables)
+        foreach (CPD cpd in Roster.cpdConstrainables)
         {
             // Only add ones that haven't been guessed yet.
             if (infoTracker.shouldGuessCPD(cpd.cpdType))
@@ -106,7 +107,7 @@ public class CPUAgentLogic
 
         // 6. The CPU's single best "Ask Around" request, which is enough of a PITA to calculate / track that we
         //    should only consider this for now.
-        AAMatrix.Inquiry inq = infoTracker.askAroundMatrix.getBestInquiry(1);
+        AAMatrix.Inquiry inq = infoTracker.askAroundMatrix.getBestInquiry(selfAgent.getAskAroundLimit());
         rankedLogicActions.Add(new LogicAction_AskAround(inq.overallScore, inq.about, inq.askingAgent));
 
         // TODO insertion sort?
@@ -134,6 +135,7 @@ public class CPUAgentLogic
         
         // TODO: Eventually we have a more sophisticated way, but for now, just choose the best action every time
         LogicAction chosenAction = rankedLogicActions[0];
+        Debug.Log("Chosen " + chosenAction.ToString());
 
         executeAction(chosenAction);
     }
@@ -159,7 +161,12 @@ public class CPUAgentLogic
                 break;
 
             case LogicActionType.Ask_Around:
-                //selfAgent.askAgent()
+                LogicAction_AskAround aa = action as LogicAction_AskAround;
+                selfAgent.askAgent(aa.askAgent, aa.property);
+                break;
+
+            case LogicActionType.PersonCard:
+                selfAgent.playCard((action as LogicAction_PlayPersonCard).personCard);
                 break;
 
             default:
@@ -284,6 +291,29 @@ public class CPUAgentLogic
         {
             clueCard = cc;
         }
+
+        public override string ToString()
+        {
+            return "Declass (" + clueCard.cpdType + "::" + clueCard.category + "): " + score;
+        }
+    }
+
+    class LogicAction_PlayPersonCard : LogicAction
+    {
+        public PersonCard personCard;
+
+        public LogicAction_PlayPersonCard(float sc, PersonCard pc) : base(LogicActionType.PersonCard, sc)
+        {
+            personCard = pc;
+        }
+
+        public override string ToString()
+        {
+            if (personCard.cardType == CardType.ACTION)
+                return (personCard as ActionCard).actionCardType.ToString() + ": " + score;
+            else
+                return (personCard as GoldCard).goldCardType.ToString() + ": " + score;
+        }
     }
 
     class LogicAction_GuessProperty : LogicAction
@@ -293,6 +323,11 @@ public class CPUAgentLogic
         public LogicAction_GuessProperty(float sc, (CPD_Type cpdType, string category) props) : base(LogicActionType.Guess_Property, sc)
         {
             property = props;
+        }
+
+        public override string ToString()
+        {
+            return "Guess property: " + property.ToString() + ": " + score;
         }
     }
 
@@ -306,12 +341,18 @@ public class CPUAgentLogic
             property = props;
             askAgent = askToAgent;
         }
+
+        public override string ToString()
+        {
+            return "AA for " + property.Count + " props: " + score;
+        }
     }
 
     enum LogicActionType
     {
         Nothing,
         Declassify,
+        PersonCard,
         Guess_Property,
         Guess_Target,
         Ask_Around

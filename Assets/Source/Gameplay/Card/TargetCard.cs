@@ -63,7 +63,6 @@ public class TargetCard : ConditionalUI
         if (wasCorrect && cpdType == this.cpdType)
         {
             RevealToAll();
-            TurnDriver.instance.giveReward(0, reward);
         }
     }
 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 
 public class PopupCanvas : MonoBehaviour
 {
@@ -22,6 +23,9 @@ public class PopupCanvas : MonoBehaviour
 
     private List<TargetCharGuess> targetPropertyEntries = new List<TargetCharGuess>();
     private List<GameObject> displayCardObjects = new List<GameObject>();
+
+
+    public static event Action popupAskAroundResponseReceived = () => { };
 
 
     // Start is called before the first frame update
@@ -70,7 +74,7 @@ public class PopupCanvas : MonoBehaviour
         targetPropertyGuess.SetActive(false);
     }
 
-    public void popup_askedAbout(Agent askedBy, IEnumerable<(CPD_Type cpd, string cat)> inquiry)
+    public void popup_askedAbout(Agent askedBy, List<(CPD_Type cpd, string cat)> inquiry)
     {
         int count = 0;
         askedAbout.SetActive(true);
@@ -99,7 +103,7 @@ public class PopupCanvas : MonoBehaviour
         askedAbout.SetActive(false);
     }
 
-    public void popup_askAroundResult(IEnumerable<(CPD_Type cpd, string cat)> shown)
+    public void popup_askAroundResult(List<(CPD_Type cpd, string cat)> shown)
     {
         int count = 0;
         askAroundResult.SetActive(true);
@@ -117,7 +121,13 @@ public class PopupCanvas : MonoBehaviour
         askAroundTitle.text = "Here's what they had: " + count + " cards";
     }
 
-    public void popup_askAroundResultClear()
+    public void aaResponse_showAllCards()
+    {
+        popup_askedAboutClear();
+        PlayerAgent.instance.aaRespond_Show();
+    }
+
+    public void popup_askAroundResultClear(bool playerAsked)
     {
         foreach (GameObject go in displayCardObjects)
         {
@@ -125,9 +135,13 @@ public class PopupCanvas : MonoBehaviour
         }
         displayCardObjects.Clear();
         askAroundResult.SetActive(false);
+
+        // Dispatch this action only when the player is asking another agent for info
+        if (playerAsked)
+            popupAskAroundResponseReceived.Invoke();
     }
 
-    public void popup_askAroundVague(IEnumerable<(CPD_Type cpd, string cat)> inquiry, int numCorrect)
+    public void popup_askAroundVague(List<(CPD_Type cpd, string cat)> inquiry, int numCorrect)
     {
         int count = 0;
         askAroundResult.SetActive(true);

@@ -92,6 +92,17 @@ public class TurnDriver : MonoBehaviour
         goldCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
         goldCardDeck.Add(new GoldCard(GoldCardType.ESCORT));
 
+        //actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+        actionCardDeck.Add(new ActionCard(ActionCardType.BODYGUARD));
+        actionCardDeck.Add(new ActionCard(ActionCardType.BODYGUARD));
+
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
+
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
+
         actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
 
         actionCardDeck.Add(new ActionCard(ActionCardType.ENFORCER));
@@ -100,14 +111,6 @@ public class TurnDriver : MonoBehaviour
         actionCardDeck.Add(new ActionCard(ActionCardType.INTERN));
         actionCardDeck.Add(new ActionCard(ActionCardType.ENFORCER));
 
-        
-        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
-        actionCardDeck.Add(new ActionCard(ActionCardType.LAWYER));
-
-        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
-        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
-        actionCardDeck.Add(new ActionCard(ActionCardType.ANALYST));
-
         actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
         actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
         actionCardDeck.Add(new ActionCard(ActionCardType.SIDEKICK));
@@ -116,6 +119,17 @@ public class TurnDriver : MonoBehaviour
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
         actionCardDeck.Add(new ActionCard(ActionCardType.CENSOR));
 
+        //Utility.Shuffle<ActionCard>(actionCardDeck);
+        //Utility.Shuffle<GoldCard>(goldCardDeck);
+        //giveReward(0, TargetCPDGuessReward.ActionCard);
+        giveReward(0, TargetCPDGuessReward.ActionCard);
+        giveReward(0, TargetCPDGuessReward.ActionCard);
+        giveReward(1, TargetCPDGuessReward.ActionCard);
+        giveReward(2, TargetCPDGuessReward.ActionCard);
+        giveReward(1, TargetCPDGuessReward.ActionCard);
+        giveReward(2, TargetCPDGuessReward.ActionCard);
+        giveReward(1, TargetCPDGuessReward.ActionCard);
+        giveReward(2, TargetCPDGuessReward.ActionCard);
 
         // Get properties of target
         List<CPD_Variant> targetData = rost.getTargetAsCPDs();
@@ -237,14 +251,14 @@ public class TurnDriver : MonoBehaviour
         return toGive;
     }
 
-    public void executeActionCard(Agent playingAgent, Agent targetAgent, ReactionVerdict verdict) { 
-
+    public void executeActionCard(Agent playingAgent, Agent targetAgent, ReactionVerdict verdict) {
+        Debug.Log("Finishing the turn after reaction...");
         switch(verdict)
         {
             // The player couldn't do anything about it, so continue as normal
             case ReactionVerdict.ALLOW:
                 if (playingAgent.id == 0)     ActionHandler_PA.handleFinalPlayedAction(queuedCard, targetAgent);
-                else                          ActionHandler_CPU.handleFinalPlayedAction(queuedCard, targetAgent);
+                else                          ActionHandler_CPU.handleFinalPlayedAction(playingAgent as CPUAgent, queuedCard, targetAgent);
                 break;
             case ReactionVerdict.BLOCK:
                 Debug.Log("The action was blocked by a bodyguard!");
@@ -252,7 +266,7 @@ public class TurnDriver : MonoBehaviour
             case ReactionVerdict.REVERSE:
                 queuedCard.owner = targetAgent;
                 if (targetAgent.id == 0)   ActionHandler_PA.handleFinalPlayedAction(queuedCard, playingAgent);
-                else                       ActionHandler_CPU.handleFinalPlayedAction(queuedCard, playingAgent);
+                else                       ActionHandler_CPU.handleFinalPlayedAction(targetAgent as CPUAgent, queuedCard, playingAgent);
                 break;
         }
     }
@@ -261,5 +275,10 @@ public class TurnDriver : MonoBehaviour
     {
         if (rewardType == TargetCPDGuessReward.ActionCard) agentsInOrder[toId].acquireCard(getNextCardInLine(CardType.ACTION, true));
         else if (rewardType == TargetCPDGuessReward.GoldCard) agentsInOrder[toId].acquireCard(getNextCardInLine(CardType.GOLD, true));
+    }
+
+    public void forceEndTurn()
+    {
+        agentsInOrder[currTurn].endOfTurn();
     }
 }

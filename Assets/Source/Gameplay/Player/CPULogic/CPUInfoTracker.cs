@@ -101,6 +101,7 @@ public class CPUInfoTracker
             if (catsPossible[cpdType].Count == 1)
                 solvedCPDs.Add(cpdType);
         }
+        askAroundMatrix.learnedAboutCPD(cpdType, category, onTarget);
     }
 
     /// <summary>

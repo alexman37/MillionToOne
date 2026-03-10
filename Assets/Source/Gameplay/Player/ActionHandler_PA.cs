@@ -15,6 +15,8 @@ public static class ActionHandler_PA
     // Some cards require selecting an agent first, and prompting that agent for if they can react to it
     public static void handlePlayedAction(PersonCard playedCard)
     {
+        bool stillEndTurn = true;
+
         if (playerAgent == null) playerAgent = PlayerAgent.instance;
 
         if (playedCard is ActionCard)
@@ -27,14 +29,17 @@ public static class ActionHandler_PA
                     break;
                 case ActionCardType.SIDEKICK:
                     playerAgent.askAroundCount += 1;
+                    stillEndTurn = false;
                     break;
                 case ActionCardType.ANALYST:
                 case ActionCardType.LAWYER:
                     TurnDriver.instance.queuedCard = playedCard;
                     Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                    stillEndTurn = false;
                     break;
                 case ActionCardType.ENFORCER:
                     playerAgent.targetGuessCount += 2;
+                    stillEndTurn = false;
                     break;
                 case ActionCardType.INTERN:
                     SelectionWindow.instance.displaySelection(SelectionWindow.SelectionCardOutcome.TAKE_COPY, 1, playerAgent, 1, true);
@@ -52,9 +57,11 @@ public static class ActionHandler_PA
                 case GoldCardType.THIEF:
                     TurnDriver.instance.queuedCard = playedCard;
                     Total_UI.instance.changeUIState(Current_UI_State.AgentSelection);
+                    stillEndTurn = false;
                     break;
                 case GoldCardType.MERCENARIES:
                     playerAgent.targetGuessCount += 8;
+                    stillEndTurn = false;
                     break;
                 case GoldCardType.INSIDER:
                     bool verified = RosterForm.instance.VerifyForm();
@@ -63,6 +70,7 @@ public static class ActionHandler_PA
                     break;
             }
         }
+        if (stillEndTurn) playerAgent.endOfTurn();
     }
 
 
@@ -104,5 +112,6 @@ public static class ActionHandler_PA
                     break;
             }
         }
+        playerAgent.endOfTurn();
     }
 }
