@@ -23,7 +23,7 @@ public class FormButton : ConditionalUI
     Image imgCol3;
 
     public Button noButton;
-    public Button priButton;
+    //public Button priButton;
     public Button yesButton;
     public TextMeshProUGUI title;
 
@@ -52,7 +52,7 @@ public class FormButton : ConditionalUI
     {
         state = FormButtonState.Unknown;
         imgCol1 = noButton.gameObject.GetComponent<Image>();
-        imgCol2 = priButton.gameObject.GetComponent<Image>();
+        //imgCol2 = priButton.gameObject.GetComponent<Image>();
         imgCol3 = yesButton.gameObject.GetComponent<Image>();
 
         updatedConstraint += (_,__,f) => { };
@@ -169,19 +169,19 @@ public class FormButton : ConditionalUI
             if (state == FormButtonState.Confirmed)
             {
                 imgCol1.sprite = withCertainty ? RosterForm.instance.getFormSprite("dyi") : RosterForm.instance.getFormSprite("myi");
-                imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dyi") : RosterForm.instance.getFormSprite("myi");
+                //imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dyi") : RosterForm.instance.getFormSprite("myi");
                 imgCol3.sprite = withCertainty ? RosterForm.instance.getFormSprite("dy") : RosterForm.instance.getFormSprite("my");
             }
             else if (state == FormButtonState.Eliminated)
             {
                 imgCol1.sprite = withCertainty ? RosterForm.instance.getFormSprite("dn") : RosterForm.instance.getFormSprite("mn");
-                imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dni") : RosterForm.instance.getFormSprite("mni");
+                //imgCol2.sprite = withCertainty ? RosterForm.instance.getFormSprite("dni") : RosterForm.instance.getFormSprite("mni");
                 imgCol3.sprite = withCertainty ? RosterForm.instance.getFormSprite("dni") : RosterForm.instance.getFormSprite("mni");
             }
             else
             {
                 imgCol1.sprite = RosterForm.instance.getFormSprite("x");
-                imgCol2.sprite = RosterForm.instance.getFormSprite("x");
+                //imgCol2.sprite = RosterForm.instance.getFormSprite("x");
                 imgCol3.sprite = RosterForm.instance.getFormSprite("x");
             }
 
@@ -243,8 +243,8 @@ public class FormButton : ConditionalUI
 
                 b.imgCol1.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mn") :
                         (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
-                b.imgCol2.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mni") :
-                    (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
+                //b.imgCol2.sprite = b.noTicked ? RosterForm.instance.getFormSprite("mni") :
+                //    (wasConfirmed ? RosterForm.instance.getFormSprite("myi") : RosterForm.instance.getFormSprite("x"));
 
                 if (b.noTicked) buttonsAreOff.Add(b.category);
             }

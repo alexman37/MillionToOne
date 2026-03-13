@@ -48,6 +48,7 @@ public class Total_UI : MonoBehaviour
             StopCoroutine(activeCo);
             activeCo = StartCoroutine(changeUIStateAfterDelay(newState, 0.25f));
         }
+        InfoBar.instance.setReadout("Current state is " + newState.ToString());
     }
 
     private IEnumerator changeUIStateAfterDelay(Current_UI_State newState, float time)
