@@ -58,20 +58,26 @@ public class TurnDriver : MonoBehaviour
 
     private void onRosterCreation(Roster rost)
     {
+        StartCoroutine(onRosterCreationCo(rost));
+    }
+
+    private IEnumerator onRosterCreationCo(Roster rost)
+    {
         currentRoster = rost;
         generatePlayers();
-        Total_UI.instance.initializeUI(agentsInOrder, rost);
-        generateDeck(rost);
+        yield return Total_UI.instance.initializeUI(agentsInOrder, rost);
+        yield return generateDeckCo();
     }
 
     // Generate the deck once you know what it should contain
-    private void generateDeck(Roster rost)
+    private IEnumerator generateDeckCo()
     {
         clueCardDeck = new List<ClueCard>();
         actionCardDeck = new List<ActionCard>();
         goldCardDeck = new List<GoldCard>();
 
         // Add to deck: All action card types
+        // TODO TODO TODO !!!
 
         goldCardDeck.Add(new GoldCard(GoldCardType.THIEF));
         goldCardDeck.Add(new GoldCard(GoldCardType.THIEF));
@@ -122,17 +128,17 @@ public class TurnDriver : MonoBehaviour
         //Utility.Shuffle<ActionCard>(actionCardDeck);
         //Utility.Shuffle<GoldCard>(goldCardDeck);
         //giveReward(0, TargetCPDGuessReward.ActionCard);
+        /*giveReward(0, TargetCPDGuessReward.ActionCard);
         giveReward(0, TargetCPDGuessReward.ActionCard);
-        giveReward(0, TargetCPDGuessReward.ActionCard);
         giveReward(1, TargetCPDGuessReward.ActionCard);
         giveReward(2, TargetCPDGuessReward.ActionCard);
         giveReward(1, TargetCPDGuessReward.ActionCard);
         giveReward(2, TargetCPDGuessReward.ActionCard);
         giveReward(1, TargetCPDGuessReward.ActionCard);
-        giveReward(2, TargetCPDGuessReward.ActionCard);
+        giveReward(2, TargetCPDGuessReward.ActionCard);*/
 
         // Get properties of target
-        List<CPD_Variant> targetData = rost.getTargetAsCPDs();
+        List<CPD_Variant> targetData = currentRoster.getTargetAsCPDs();
         Dictionary<CPD_Type, string> targetProperties = new Dictionary<CPD_Type, string>();
         foreach(CPD_Variant cpdVar in targetData)
         {
@@ -154,7 +160,7 @@ public class TurnDriver : MonoBehaviour
         // Shuffle in place
         clueCardDeck = Utility.Shuffle<ClueCard>(clueCardDeck);
 
-        StartCoroutine(roundSetup());
+        yield return roundSetup();
     }
 
     private void generatePlayers()
@@ -177,7 +183,7 @@ public class TurnDriver : MonoBehaviour
     // TODO: Animations and stuff
     private IEnumerator roundSetup()
     {
-        yield return new WaitForSeconds(3);
+        yield return new WaitForSeconds(1);
 
         // Distribute the cards to all players.
         int agentIndex = 0;

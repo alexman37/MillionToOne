@@ -87,6 +87,8 @@ public class PlayerAgent : Agent
         isYourTurn = true;
         Debug.Log("It's the player's turn.");
         Total_UI.instance.changeUIState(Current_UI_State.PlayerTurn);
+
+        AnimationManager.instance.BeginTurnForPlayer();
     }
 
     // Dealt a card at the start of the game

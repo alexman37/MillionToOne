@@ -79,9 +79,8 @@ public class CPUAgent : Agent
 
         Debug.Log("It's CPU player " + agentName + "'s turn.");
 
-        // TODO Do the thing with animations...
-
-        agentLogic.processTurn();
+        // Wait for animation manager to finish its thing - process logic over there when complete
+        AnimationManager.instance.BeginTurnForCPU(this);
     }
 
     public override int startingDealtCard(ClueCard card)
